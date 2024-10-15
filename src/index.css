@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*{
+    margin: 0;
+    padding: 0;
+}
+@keyframes yellow-glow {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+/* styles.css */
+
+  
+  
+.text-gradient-animation {
+    background: linear-gradient(90deg, #fbbf24, #facc15, #f59e0b, #fbbf24);
+    background-size: 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: yellow-glow 3s linear infinite;
+}
+
+
+
