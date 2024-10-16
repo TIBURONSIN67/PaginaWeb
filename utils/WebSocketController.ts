@@ -11,16 +11,18 @@ export class WebSocketController {
         onMessage: (event: MessageEvent) => void, 
         onError: (event: Event) => void, 
         onClose: () => void,
-        onOpen?: () => void // Opción para pasar onOpen
+        onOpen?: () => void,
+        useSecure: boolean = false // Nueva opción para conexiones seguras
     ) {
-        this.url = url;
+        this.url = `${useSecure ? 'wss' : 'ws'}://${url}/ws`; // Usar 'wss' si es seguro
         this.onMessage = onMessage;
         this.onError = onError;
         this.onClose = onClose;
         if (onOpen) {
-            this.onOpen = onOpen; // Asignar onOpen si se pasa
+            this.onOpen = onOpen;
         }
     }
+    
 
     connect() {
         this.socket = new WebSocket(this.url);
@@ -37,6 +39,7 @@ export class WebSocketController {
         }
     }
 
+    
     send(data: object) {
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
             this.socket.send(JSON.stringify(data));

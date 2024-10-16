@@ -7,18 +7,55 @@ interface WebSocketLoginProps {
 }
 
 export const WebSocketLogin: React.FC<WebSocketLoginProps> = ({ onConnectionChange }) => {
-  const [url, setUrl] = useState(''); // URL del WebSocket
-  const [error, setError] = useState(''); // Mensaje de error
+  const [ip, setIp] = useState(""); // URL del WebSocket
+  const [error, setError] = useState(""); // Mensaje de error
   const [isLoading, setIsLoading] = useState(false); // Estado de carga
+  const [useSecure, setUseSecure] = useState(false); // Para usar wss o ws
 
-  // Maneja el cambio en el input
+  // Maneja el cambio en el input de IP
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUrl(e.target.value);
+    setIp(e.target.value);
+  };
+
+  // Maneja el cambio en el checkbox de conexión segura
+  const handleSecureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUseSecure(e.target.checked);
+  };
+
+  const initiateConnection = (timeoutId:number) => {
+    const newWsController = new WebSocketController(
+      ip,
+      (event) => {
+        console.log('Mensaje recibido:', event.data);
+      },
+      (event) => {
+        console.error('Error de WebSocket:', event);
+        setError('Error en la conexión al WebSocket');
+        clearTimeout(timeoutId);
+        setIsLoading(false);
+      },
+      () => {
+        console.log('Conexión cerrada');
+        onConnectionChange(false, null);
+        clearTimeout(timeoutId);
+        setIsLoading(false);
+      },
+      () => {
+        console.log('Conexión establecida');
+        onConnectionChange(true, newWsController);
+        clearTimeout(timeoutId);
+        setIsLoading(false);
+        setError('');
+      },
+      useSecure // Conexión segura o no
+    );
+
+    newWsController.connect();
   };
 
   const handleConnect = () => {
-    if (!url) {
-      setError('Por favor, ingrese una URL');
+    if (!ip) {
+      setError('Por favor, ingrese una dirección IP');
       return;
     }
 
@@ -29,42 +66,15 @@ export const WebSocketLogin: React.FC<WebSocketLoginProps> = ({ onConnectionChan
     const timeoutId = setTimeout(() => {
       setIsLoading(false); // Finaliza el estado de carga
       setError('No se pudo conectar en el tiempo esperado'); // Muestra un mensaje de error
-    }, timeoutDuration);
+    },timeoutDuration) as unknown as number;
 
     try {
-      const newWsController = new WebSocketController(
-        url,
-        (event) => {
-          console.log('Mensaje recibido:', event.data);
-        },
-        (event) => {
-          console.error('Error de WebSocket:', event);
-          setError('Error en la conexión al WebSocket'); // Mensaje de error
-          clearTimeout(timeoutId); // Cancela el timeout
-          setIsLoading(false); // Finaliza el estado de carga
-        },
-        () => {
-          console.log('Conexión cerrada');
-          onConnectionChange(false, null); // Notifica desconexión
-          clearTimeout(timeoutId); // Cancela el timeout
-          setIsLoading(false); // Finaliza el estado de carga
-        },
-        () => {
-          console.log('Conexión establecida');
-          onConnectionChange(true, newWsController); // Notifica conexión exitosa
-          clearTimeout(timeoutId); // Cancela el timeout
-          setIsLoading(false); // Finaliza el estado de carga
-          setError(''); // Reinicia el error cuando se conecta correctamente
-        }
-      );
-
-      // Conecta al WebSocket
-      newWsController.connect();
+      initiateConnection(timeoutId);
     } catch (err) {
-      console.error('Error al intentar conectar:', err); // Registra el error en la consola
-      setError('URL inválida'); // Muestra un mensaje de error si la URL es incorrecta
-      setIsLoading(false); // Finaliza el estado de carga
-      clearTimeout(timeoutId); // Cancela el timeout
+      console.error('Error al intentar conectar:', err);
+      setError('URL inválida');
+      setIsLoading(false);
+      clearTimeout(timeoutId);
     }
   };
 
@@ -73,11 +83,22 @@ export const WebSocketLogin: React.FC<WebSocketLoginProps> = ({ onConnectionChan
       <h1 className="text-3xl font-bold mb-6 text-yellow-900">Conectar a WebSocket</h1>
       <input
         type="text"
-        placeholder="Ingrese la URL del WebSocket"
-        value={url}
+        placeholder="Ingrese la dirección IP"
+        value={ip}
         onChange={handleUrlChange}
         className="border border-yellow-600 p-2 mb-4 w-full max-w-md text-center rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-600"
       />
+      <div className="mb-4">
+        <label className="flex items-center">
+          <input
+            type="checkbox"
+            checked={useSecure}
+            onChange={handleSecureChange}
+            className="mr-2"
+          />
+          Usar conexión segura (wss://)
+        </label>
+      </div>
       <SendButton
         text="Conectar"
         handleConnectClick={handleConnect}
