@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { GameModeSelection } from "./components/GameModeSelection";
-import { MainMenu } from "./components/MainMenu";
-import { SettingsPage } from "./components/SettingsPage";
-import { ControlModePage } from "./components/control/ControlModePage";
-import { GyroModePage } from "./components/gyro/GyroModePage";
-import { LoginModePage } from "./components/login/LoginModePage";
-import { WebSocketController } from "../utils/WebSocketController";
+import { GameModeSelection } from "./components/sections/GameModeSection";
+import { MainMenu } from "./Pages/MainMenuPage";
+import { SettingsPage } from "./Pages/SettingsPage";
+import { ControlModePage } from "./Pages/ControlModePage";
+import { GyroModePage } from "./Pages/GyroModePage";
+import { LoginModePage } from "./Pages/LoginModePage";
+import { useWebSocketConnection } from "./hooks/HookHandleSocket"; // Importa el hook
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -27,8 +27,9 @@ function App() {
   const [isPortrait, setIsPortrait] = useState(false);
   const [currentPage, setCurrentPage] = useState<PageInterface>(pages[0]);
   const [history, setHistory] = useState<PageInterface[]>([pages[0]]);
-  const [isConnected, setIsConnected] = useState(false); // Estado de conexión
-  const [wsController, setWsController] = useState<WebSocketController | null>(null); // Controlador WebSocket
+
+  // Utiliza el hook para manejar la conexión WebSocket
+  const { isConnected } = useWebSocketConnection();
 
   // Efecto para manejar el cambio de orientación
   useEffect(() => {
@@ -37,10 +38,9 @@ function App() {
       setIsPortrait(isCurrentlyPortrait);
 
       if (isCurrentlyPortrait) {
-        // Muestra el mensaje de advertencia
         toast.warn("Por favor, gira tu dispositivo para una mejor experiencia.", {
           position: "top-center",
-          autoClose: 5000, // Tiempo en milisegundos
+          autoClose: 5000,
           hideProgressBar: true,
           closeOnClick: true,
           pauseOnHover: true,
@@ -52,8 +52,7 @@ function App() {
     window.addEventListener('resize', handleOrientationChange);
     window.addEventListener('orientationchange', handleOrientationChange);
     
-    // Verificar la orientación inicial
-    handleOrientationChange();
+    handleOrientationChange(); // Verificar la orientación inicial
 
     return () => {
       window.removeEventListener('resize', handleOrientationChange);
@@ -78,12 +77,6 @@ function App() {
     }
   };
 
-  // Maneja el cambio en la conexión
-  const handleConnectionChange = (connected: boolean, controller: WebSocketController | null) => {
-    setIsConnected(connected);
-    setWsController(controller);
-  };
-
   // Renderizado de la página actual
   const renderPage = () => {
     switch (currentPage.name) {
@@ -98,29 +91,29 @@ function App() {
       case "controlMode":
         return (
           <>
-            {isConnected && wsController ? (
-              <ControlModePage wsController={wsController} onBackClick={handleBackClick} />
+            {isConnected ? (
+              <ControlModePage onBackClick={handleBackClick} />
             ) : (
-              <LoginModePage onConnectionChange={handleConnectionChange} onBackClick={handleBackClick} />
+              <LoginModePage 
+                onBackClick={handleBackClick} 
+              />
             )}
           </>
         );
       case "gyroMode":
         return (
           <>
-            {isConnected && wsController ? (
-              <GyroModePage wsController={wsController} onBackClick={handleBackClick} />
+            {isConnected ? (
+              <GyroModePage onBackClick={handleBackClick} />
             ) : (
-              <LoginModePage onConnectionChange={handleConnectionChange} onBackClick={handleBackClick} />
+              <LoginModePage 
+                onBackClick={handleBackClick} 
+              />
             )}
           </>
         );
       case "settings":
-        return (
-          <SettingsPage 
-            onBackClick={handleBackClick} 
-          />
-        );
+        return <SettingsPage onBackClick={handleBackClick} />;
       default:
         return (
           <MainMenu

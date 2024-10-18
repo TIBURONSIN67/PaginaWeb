@@ -1,5 +1,5 @@
-import { BackButton, ButtonOptions } from "./Buttons";
-import { Page } from "./Page";
+import { BackButton, ButtonOptions } from "../Buttons";
+import { Page } from "../Page";
 
 interface GameModeSelectionProps {
   onBackClick: () => void;

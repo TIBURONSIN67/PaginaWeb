@@ -1,5 +1,5 @@
-import { BackButton} from "./Buttons";
-import { Page } from "./Page";
+import { BackButton} from "../components/Buttons";
+import { Page } from "../components/Page";
 
 interface SettingsPageProps {
   onBackClick: () => void;

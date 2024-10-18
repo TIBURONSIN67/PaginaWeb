@@ -55,9 +55,12 @@ export function BackButton({ text, onClick, extraClassName }: TextButtonProps) {
   );
 }
 
-interface SendButtonProps extends TextButtonProps {
+
+interface SendButtonProps {
+  text?: string;
+  extraClassName?: string;
   handleConnectClick: () => void;
-  isLoading?: boolean; // Agregado para manejar el estado de carga
+  isLoading?: boolean; // Valor predeterminado
 }
 
 export function SendButton({
@@ -75,7 +78,7 @@ export function SendButton({
         duration-300 ease-in-out
         bg-red-600 hover:bg-red-800 w-[120px] h-10
         ${extraClassName} 
-        ${isLoading ? 'opacity-50 cursor-not-allowed' : ''} // Estilo si está cargando
+        ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
       `}
       aria-label={text}
       onFocus={(e) => e.currentTarget.classList.add('ring-2', 'ring-yellow-500')}
@@ -86,7 +89,6 @@ export function SendButton({
     </button>
   );
 }
-
 // Componente para botones de control de movimiento
 export function MovementControlButton(
   { 

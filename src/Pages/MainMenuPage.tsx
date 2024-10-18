@@ -1,5 +1,5 @@
-import { ButtonOptions } from "./Buttons";
-import { Page } from "./Page";
+import { ButtonOptions } from "../components/Buttons";
+import { Page } from "../components/Page";
 
 interface MainMenuProps {
   onPlayClick: () => void;

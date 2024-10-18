@@ -1,18 +1,13 @@
-import { BackButton } from "../Buttons";
-import { Page } from "../Page";
+import { BackButton } from "../components/Buttons";
+import { Page } from "../components/Page";
+import { SectionControlMovement } from "../components/sections/SectionControlMovement";
 import { useState } from "react";
-import { SectionControlMovement } from "../control/SectionControlMovement";
-import { WebSocketController } from "../../../utils/WebSocketController";
 
-
-interface GyroModePageProps {
+interface ControlModePageProps {
   onBackClick: () => void;
-  wsController: WebSocketController; // Controlador del WebSocket pasado como prop
-
 }
 
-export function GyroModePage({ onBackClick, wsController }: GyroModePageProps) {
-
+export function ControlModePage({ onBackClick }: ControlModePageProps) {
   const [resetFunction, setResetFunction] = useState<(() => void) | null>(null);
 
   // Función que recibirá el "reset" del hijo
@@ -24,7 +19,8 @@ export function GyroModePage({ onBackClick, wsController }: GyroModePageProps) {
     if (resetFunction) {
       resetFunction(); // Ejecuta la función de reinicio que vino del hijo
     }
-  }
+  };
+
   return (
     <Page
       extraClassName="your-extra-class"
@@ -39,7 +35,9 @@ export function GyroModePage({ onBackClick, wsController }: GyroModePageProps) {
         />
       }
     >
-      <SectionControlMovement wsController={wsController} gyro={true} passResetFunctionToParent={handleReceiveResetFunction}/>
+      <SectionControlMovement 
+        passResetFunctionToParent={handleReceiveResetFunction} 
+      />
     </Page>
   );
 }
