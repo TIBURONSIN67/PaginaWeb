@@ -4,7 +4,7 @@ import { MovementControlButton, LightButton, DirectionControlButton } from "../B
 interface SectionControlMovementProps {
   passResetFunctionToParent: (resetFunc: () => void) => void;
   gyro?: boolean;
-  sendMovementData: (comand:string)=> void;
+  sendMovementData: (command: string) => void;
   isConnected: boolean;
 }
 
@@ -22,24 +22,31 @@ export function SectionControlMovement(
     isRight: false,
     isLight: false,
   });
+
+  // Enviar STOP cuando se conecta
   useEffect(() => {
     if (isConnected) {
-      sendMovementData("STOP"); // Usa sendMovementData
+      sendMovementData("STOP");
     }
   }, [isConnected, sendMovementData]);
 
+  // Pasar la función de reseteo al padre
   useEffect(() => {
     passResetFunctionToParent(() => {
       sendMovementData("STOP");
       sendMovementData("LIGHT_OFF");
+      setMovementState((prevState) => ({ ...prevState, isLight: false }));
     });
-  }, [isConnected, passResetFunctionToParent, sendMovementData]);
+  }, [passResetFunctionToParent, sendMovementData]);
 
+  // Alternar el estado de la luz
   const toggleLight = () => {
     const newLightState = !movementState.isLight;
+    setMovementState((prevState) => ({ ...prevState, isLight: newLightState }));
     sendMovementData(newLightState ? "LIGHT_ON" : "LIGHT_OFF");
   };
 
+  // Controlar movimiento hacia adelante
   const controlForward = () => {
     if (movementState.isForward) {
       sendMovementData("STOP");
@@ -50,6 +57,7 @@ export function SectionControlMovement(
     }
   };
 
+  // Controlar movimiento hacia atrás
   const controlBackward = () => {
     if (movementState.isBackward) {
       sendMovementData("STOP");
@@ -60,19 +68,21 @@ export function SectionControlMovement(
     }
   };
 
+  // Controlar movimiento a la izquierda
   const handleLeftTouchStart = () => {
     sendMovementData("LEFT");
     setMovementState((prevState) => ({ ...prevState, isLeft: true }));
   };
 
-  const handleRightTouchStart = () => {
-    sendMovementData("RIGHT");
-    setMovementState((prevState) => ({ ...prevState, isRight: true }));
-  };
-
   const handleLeftTouchEnd = () => {
     sendMovementData("STOP");
     setMovementState((prevState) => ({ ...prevState, isLeft: false }));
+  };
+
+  // Controlar movimiento a la derecha
+  const handleRightTouchStart = () => {
+    sendMovementData("RIGHT");
+    setMovementState((prevState) => ({ ...prevState, isRight: true }));
   };
 
   const handleRightTouchEnd = () => {
@@ -91,7 +101,7 @@ export function SectionControlMovement(
         <MovementControlButton text="R" pressed={movementState.isBackward} onClick={controlBackward} />
       </div>
       <div className="flex gap-20 md:gap-40">
-        {gyro ? null : (
+        {!gyro && (
           <>
             <DirectionControlButton text="<" handleTouchStart={handleLeftTouchStart} handleTouchEnd={handleLeftTouchEnd} isPressed={movementState.isLeft} />
             <DirectionControlButton text=">" handleTouchStart={handleRightTouchStart} handleTouchEnd={handleRightTouchEnd} isPressed={movementState.isRight} />
