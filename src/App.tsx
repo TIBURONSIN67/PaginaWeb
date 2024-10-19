@@ -27,9 +27,16 @@ function App() {
   const [isPortrait, setIsPortrait] = useState(false);
   const [currentPage, setCurrentPage] = useState<PageInterface>(pages[0]);
   const [history, setHistory] = useState<PageInterface[]>([pages[0]]);
+  const [hasShownWarning, setHasShownWarning] = useState(false); // Nuevo estado para controlar la advertencia
 
   // Utiliza el hook para manejar la conexión WebSocket
-  const { isConnected } = useWebSocketConnection();
+  const { 
+    isConnected,
+    connectWebSocket, 
+    isLoading,
+    error,
+    sendMovementData,
+  } = useWebSocketConnection();
 
   // Efecto para manejar el cambio de orientación
   useEffect(() => {
@@ -37,7 +44,7 @@ function App() {
       const isCurrentlyPortrait = window.innerHeight > window.innerWidth;
       setIsPortrait(isCurrentlyPortrait);
 
-      if (isCurrentlyPortrait) {
+      if (isCurrentlyPortrait && !hasShownWarning) {
         toast.warn("Por favor, gira tu dispositivo para una mejor experiencia.", {
           position: "top-center",
           autoClose: 5000,
@@ -46,6 +53,9 @@ function App() {
           pauseOnHover: true,
           draggable: true,
         });
+        setHasShownWarning(true); // Marcar que ya se mostró la advertencia
+      } else if (!isCurrentlyPortrait) {
+        setHasShownWarning(false); // Reiniciar la advertencia cuando no está en retrato
       }
     };
 
@@ -58,7 +68,7 @@ function App() {
       window.removeEventListener('resize', handleOrientationChange);
       window.removeEventListener('orientationchange', handleOrientationChange);
     };
-  }, []);
+  }, [hasShownWarning]); // Añadir hasShownWarning como dependencia
 
   // Función general para cambiar de página
   const handlePageClick = (page: PageInterface) => {
@@ -92,10 +102,18 @@ function App() {
         return (
           <>
             {isConnected ? (
-              <ControlModePage onBackClick={handleBackClick} />
+              <ControlModePage 
+                onBackClick={handleBackClick} 
+                sendMovementData={sendMovementData}
+                isConnected={isConnected}
+              />
             ) : (
               <LoginModePage 
+                isConnected={isConnected}
+                error={error}
+                connectWebSocket={connectWebSocket}
                 onBackClick={handleBackClick} 
+                isLoading={isLoading}
               />
             )}
           </>
@@ -104,10 +122,19 @@ function App() {
         return (
           <>
             {isConnected ? (
-              <GyroModePage onBackClick={handleBackClick} />
+              <GyroModePage 
+                gyro={true}
+                onBackClick={handleBackClick}
+                sendMovementData={sendMovementData}
+                isConnected={isConnected}
+              />
             ) : (
               <LoginModePage 
+                isConnected={isConnected}
+                error={error}
+                connectWebSocket={connectWebSocket}
                 onBackClick={handleBackClick} 
+                isLoading={isLoading}
               />
             )}
           </>

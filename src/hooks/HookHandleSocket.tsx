@@ -1,34 +1,33 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback} from 'react';
 
-// Comandos de movimiento
-export const movementCommands = {
-  FORWARD: "FORWARD",
-  BACKWARD: "BACKWARD",
-  STOP: "STOP",
-  LEFT: "LEFT",
-  RIGHT: "RIGHT",
-  LIGHT_ON: "LIGHT_ON",
-  LIGHT_OFF: "LIGHT_OFF",
+// Función para validar formato de la IP
+const isValidIp = (ip: string) => {
+  const ipRegex = /^(192\.168\.\d{1,3}\.\d{1,3})$/;
+  return ipRegex.test(ip);
 };
 
 // Hook para manejar la conexión WebSocket
 export const useWebSocketConnection = () => {
-  const [ip, setIp] = useState("");
+  const [ip, setIp] = useState(""); // IP actual
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [useSecure, setUseSecure] = useState(false); // Nuevo estado para definir si la conexión es segura
 
-  // Conectar al WebSocket
-  const connectWebSocket = useCallback(() => {
+  // Función para conectar al WebSocket
+  const connectWebSocket = useCallback((newIp: string) => {
+    // Actualiza la IP antes de la conexión
+    setIp(newIp);
+
+    if (!isValidIp(newIp)) {
+      setError("La IP ingresada no es válida. Debe ser una IP en el rango 192.168.x.x.");
+      return;
+    }
+
     setIsLoading(true);
     setError(null); // Limpiar error al intentar conectar
 
-    // Determina si usar ws o wss según el estado `useSecure`
-    const protocol = useSecure ? 'wss' : 'ws';
-    // Construir la URL del WebSocket
-    const webSocketUrl = `${protocol}://${ip}/ws`; // Crear la URL del WebSocket
+    const webSocketUrl = `ws://${newIp}/ws`;
     const newSocket = new WebSocket(webSocketUrl);
 
     newSocket.addEventListener('open', () => {
@@ -47,15 +46,27 @@ export const useWebSocketConnection = () => {
       setError('Error de conexión');
       setIsConnected(false);
       setIsLoading(false);
+      resetConnection(); // Restablecer el estado inicial
     });
 
     newSocket.addEventListener('close', () => {
       console.log('Conexión WebSocket cerrada');
       setIsConnected(false);
+      setIsLoading(false);
+      resetConnection(); // Restablecer el estado inicial
     });
 
     setSocket(newSocket);
-  }, [ip, useSecure]); // Agrega `useSecure` como dependencia
+  }, []);
+
+  // Restablecer todos los valores al estado inicial
+  const resetConnection = useCallback(() => {
+    setIp("");
+    setIsConnected(false);
+    setError(null);
+    setIsLoading(false);
+    setSocket(null);
+  }, []);
 
   // Desconectar del WebSocket
   const disconnectWebSocket = useCallback(() => {
@@ -65,35 +76,27 @@ export const useWebSocketConnection = () => {
     }
   }, [socket]);
 
-  // Enviar comandos de movimiento
-  const sendMovementData = (command: keyof typeof movementCommands) => {
+  // Enviar comandos de movimiento de manera flexible
+  const sendMovementData = (command: string) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
-      const data = { state: movementCommands[command] };
+      const data = { state: command };
       socket.send(JSON.stringify(data));
       console.log('Datos enviados a través de WebSocket:', JSON.stringify(data));
     } else {
       console.warn('Intento de envío fallido, WebSocket no está abierto');
+      setError('No se puede enviar el comando, WebSocket no está conectado.');
     }
   };
 
-  // Limpiar la conexión al desmontar el hook
-  useEffect(() => {
-    return () => {
-      disconnectWebSocket();
-    };
-  }, [disconnectWebSocket]);
-
   return {
     ip,
-    setIp,
-    useSecure,
-    setUseSecure, // Agrega el setter para cambiar el estado de la conexión segura
+    setIp, // Permitir que el componente hijo actualice la IP
     isConnected,
     error,
     isLoading,
-    connectWebSocket,
+    connectWebSocket, // Función para conectar manualmente
     disconnectWebSocket,
     sendMovementData,
-    movementCommands,
+    resetConnection, // Restablecer manualmente si se necesita
   };
 };

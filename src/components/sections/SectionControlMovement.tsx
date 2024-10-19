@@ -1,13 +1,20 @@
 import { useEffect, useState } from "react";
 import { MovementControlButton, LightButton, DirectionControlButton } from "../Buttons";
-import { useWebSocketConnection } from "../../hooks/HookHandleSocket"; // Asegúrate de que esta importación sea correcta
 
 interface SectionControlMovementProps {
   passResetFunctionToParent: (resetFunc: () => void) => void;
   gyro?: boolean;
+  sendMovementData: (comand:string)=> void;
+  isConnected: boolean;
 }
 
-export function SectionControlMovement({ gyro, passResetFunctionToParent}: SectionControlMovementProps) {
+export function SectionControlMovement(
+  { 
+    gyro,
+    passResetFunctionToParent, 
+    sendMovementData,
+    isConnected
+  }: SectionControlMovementProps) {
   const [movementState, setMovementState] = useState({
     isBackward: false,
     isForward: false,
@@ -15,24 +22,22 @@ export function SectionControlMovement({ gyro, passResetFunctionToParent}: Secti
     isRight: false,
     isLight: false,
   });
-  const {wsController, sendMovementData} = useWebSocketConnection();
   useEffect(() => {
-    if (wsController) {
+    if (isConnected) {
       sendMovementData("STOP"); // Usa sendMovementData
     }
-  }, [wsController, sendMovementData]);
+  }, [isConnected, sendMovementData]);
 
   useEffect(() => {
     passResetFunctionToParent(() => {
       sendMovementData("STOP");
       sendMovementData("LIGHT_OFF");
     });
-  }, [wsController, passResetFunctionToParent, sendMovementData]);
+  }, [isConnected, passResetFunctionToParent, sendMovementData]);
 
   const toggleLight = () => {
     const newLightState = !movementState.isLight;
     sendMovementData(newLightState ? "LIGHT_ON" : "LIGHT_OFF");
-    setMovementState((prevState) => ({ ...prevState, isLight: newLightState }));
   };
 
   const controlForward = () => {

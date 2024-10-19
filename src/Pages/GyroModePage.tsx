@@ -5,9 +5,18 @@ import { SectionControlMovement } from "../components/sections/SectionControlMov
 
 interface GyroModePageProps {
   onBackClick: () => void;
+  gyro?: boolean;
+  sendMovementData: (comand:string)=> void;
+  isConnected: boolean;
 }
 
-export function GyroModePage({ onBackClick }: GyroModePageProps) {
+export function GyroModePage(
+  { 
+    onBackClick,
+    gyro,
+    sendMovementData,
+    isConnected, 
+  }: GyroModePageProps) {
   const [resetFunction, setResetFunction] = useState<(() => void) | null>(null);
 
   // Utiliza el hook para obtener sendMovementData
@@ -38,7 +47,9 @@ export function GyroModePage({ onBackClick }: GyroModePageProps) {
       }
     >
       <SectionControlMovement 
-        gyro={true} 
+        gyro={gyro}
+        sendMovementData={sendMovementData}
+        isConnected={isConnected} 
         passResetFunctionToParent={handleReceiveResetFunction}
       />
     </Page>

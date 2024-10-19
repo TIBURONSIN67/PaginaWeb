@@ -5,9 +5,18 @@ import { useState } from "react";
 
 interface ControlModePageProps {
   onBackClick: () => void;
+  gyro?: boolean;
+  sendMovementData: (comand:string)=> void;
+  isConnected: boolean;
 }
 
-export function ControlModePage({ onBackClick }: ControlModePageProps) {
+export function ControlModePage(
+  { 
+    onBackClick,
+    sendMovementData,
+    isConnected,
+    gyro,
+  }: ControlModePageProps) {
   const [resetFunction, setResetFunction] = useState<(() => void) | null>(null);
 
   // Función que recibirá el "reset" del hijo
@@ -37,6 +46,9 @@ export function ControlModePage({ onBackClick }: ControlModePageProps) {
     >
       <SectionControlMovement 
         passResetFunctionToParent={handleReceiveResetFunction} 
+        gyro={gyro}
+        isConnected={isConnected}
+        sendMovementData={sendMovementData}
       />
     </Page>
   );
