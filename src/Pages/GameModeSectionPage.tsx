@@ -1,5 +1,5 @@
-import { BackButton, ButtonOptions } from "../Buttons";
-import { Page } from "../Page";
+import { BackButton, ButtonOptions } from "../components/Buttons";
+import { Page } from "../components/Page";
 
 interface GameModeSelectionProps {
   onBackClick: () => void;
@@ -7,7 +7,7 @@ interface GameModeSelectionProps {
   onGyroClick: () => void;
 }
 
-export function GameModeSelection({ onBackClick, onControlClick, onGyroClick}: GameModeSelectionProps) {
+export function GameModeSelectionPage({ onBackClick, onControlClick, onGyroClick}: GameModeSelectionProps) {
   return (
     <Page
       extraClassName="your-extra-class"

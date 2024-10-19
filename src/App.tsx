@@ -1,20 +1,16 @@
-import { useState, useEffect } from "react";
-import { GameModeSelection } from "./components/sections/GameModeSection";
+import { useState } from "react";
+import { GameModeSelectionPage } from "./Pages/GameModeSectionPage";
 import { MainMenu } from "./Pages/MainMenuPage";
 import { SettingsPage } from "./Pages/SettingsPage";
 import { ControlModePage } from "./Pages/ControlModePage";
 import { GyroModePage } from "./Pages/GyroModePage";
 import { LoginModePage } from "./Pages/LoginModePage";
 import { useWebSocketConnection } from "./hooks/HookHandleSocket"; // Importa el hook
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
-// Definición de una interface para las páginas
 interface PageInterface {
   name: string;
 }
 
-// Definición de las páginas disponibles
 const pages: PageInterface[] = [
   { name: "mainMenu" },
   { name: "gameModeSelection" },
@@ -24,67 +20,52 @@ const pages: PageInterface[] = [
 ];
 
 function App() {
-  const [isPortrait, setIsPortrait] = useState(false);
   const [currentPage, setCurrentPage] = useState<PageInterface>(pages[0]);
   const [history, setHistory] = useState<PageInterface[]>([pages[0]]);
-  const [hasShownWarning, setHasShownWarning] = useState(false); // Nuevo estado para controlar la advertencia
 
-  // Utiliza el hook para manejar la conexión WebSocket
+  // Hook WebSocket
   const { 
-    isConnected,
+    isConnected, 
     connectWebSocket, 
-    isLoading,
-    error,
-    sendMovementData,
+    isLoading, 
+    error, 
+    sendMovementData 
   } = useWebSocketConnection();
 
-  // Efecto para manejar el cambio de orientación
-  useEffect(() => {
-    const handleOrientationChange = () => {
-      const isCurrentlyPortrait = window.innerHeight > window.innerWidth;
-      setIsPortrait(isCurrentlyPortrait);
-
-      if (isCurrentlyPortrait && !hasShownWarning) {
-        toast.warn("Por favor, gira tu dispositivo para una mejor experiencia.", {
-          position: "top-center",
-          autoClose: 5000,
-          hideProgressBar: true,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-        setHasShownWarning(true); // Marcar que ya se mostró la advertencia
-      } else if (!isCurrentlyPortrait) {
-        setHasShownWarning(false); // Reiniciar la advertencia cuando no está en retrato
-      }
-    };
-
-    window.addEventListener('resize', handleOrientationChange);
-    window.addEventListener('orientationchange', handleOrientationChange);
-    
-    handleOrientationChange(); // Verificar la orientación inicial
-
-    return () => {
-      window.removeEventListener('resize', handleOrientationChange);
-      window.removeEventListener('orientationchange', handleOrientationChange);
-    };
-  }, [hasShownWarning]); // Añadir hasShownWarning como dependencia
-
-  // Función general para cambiar de página
+  // Cambio de página
   const handlePageClick = (page: PageInterface) => {
     setHistory((prevHistory) => [...prevHistory, page]);
     setCurrentPage(page);
   };
 
-  // Manejo del botón de retroceso
+  // Botón de retroceso
   const handleBackClick = () => {
     if (history.length > 1) {
       setHistory((prevHistory) => {
-        const newHistory = prevHistory.slice(0, -1); // Elimina la última página
-        setCurrentPage(newHistory[newHistory.length - 1]); // Navega a la página anterior
+        const newHistory = prevHistory.slice(0, -1);
+        setCurrentPage(newHistory[newHistory.length - 1]);
         return newHistory;
       });
     }
+  };
+
+  // Página protegida por WebSocket (ControlMode y GyroMode)
+  const renderWebSocketPage = (PageComponent: any) => {
+    return isConnected ? (
+      <PageComponent 
+        onBackClick={handleBackClick} 
+        sendMovementData={sendMovementData} 
+        isConnected={isConnected} 
+      />
+    ) : (
+      <LoginModePage 
+        isConnected={isConnected} 
+        error={error} 
+        connectWebSocket={connectWebSocket} 
+        onBackClick={handleBackClick} 
+        isLoading={isLoading} 
+      />
+    );
   };
 
   // Renderizado de la página actual
@@ -92,73 +73,29 @@ function App() {
     switch (currentPage.name) {
       case "gameModeSelection":
         return (
-          <GameModeSelection
+          <GameModeSelectionPage
             onBackClick={handleBackClick}
-            onControlClick={() => handlePageClick(pages[3])} // "controlMode"
-            onGyroClick={() => handlePageClick(pages[4])} 
+            onControlClick={() => handlePageClick(pages[3])} // controlMode
+            onGyroClick={() => handlePageClick(pages[4])} // gyroMode
           />
         );
       case "controlMode":
-        return (
-          <>
-            {isConnected ? (
-              <ControlModePage 
-                onBackClick={handleBackClick} 
-                sendMovementData={sendMovementData}
-                isConnected={isConnected}
-              />
-            ) : (
-              <LoginModePage 
-                isConnected={isConnected}
-                error={error}
-                connectWebSocket={connectWebSocket}
-                onBackClick={handleBackClick} 
-                isLoading={isLoading}
-              />
-            )}
-          </>
-        );
+        return renderWebSocketPage(ControlModePage);
       case "gyroMode":
-        return (
-          <>
-            {isConnected ? (
-              <GyroModePage 
-                gyro={true}
-                onBackClick={handleBackClick}
-                sendMovementData={sendMovementData}
-                isConnected={isConnected}
-              />
-            ) : (
-              <LoginModePage 
-                isConnected={isConnected}
-                error={error}
-                connectWebSocket={connectWebSocket}
-                onBackClick={handleBackClick} 
-                isLoading={isLoading}
-              />
-            )}
-          </>
-        );
+        return renderWebSocketPage(GyroModePage);
       case "settings":
         return <SettingsPage onBackClick={handleBackClick} />;
       default:
         return (
           <MainMenu
-            onPlayClick={() => handlePageClick(pages[1])}
-            onSettingsClick={() => handlePageClick(pages[2])}
+            onPlayClick={() => handlePageClick(pages[1])} // gameModeSelection
+            onSettingsClick={() => handlePageClick(pages[2])} // settings
           />
         );
     }
   };
 
-  return (
-    <>
-      <ToastContainer />
-      <div className={isPortrait ? "portrait-class" : "landscape-class"}>
-        {renderPage()}
-      </div>
-    </>
-  );
+  return <>{renderPage()}</>;
 }
 
 export default App;
