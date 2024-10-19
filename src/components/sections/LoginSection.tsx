@@ -36,7 +36,7 @@ export const WebSocketLogin = ({
       toast.success("Conexión establecida correctamente.");
       setLastConnectionState(true); // Actualiza el estado de la conexión
     } else if (!isConnected && lastConnectionState !== false) {
-      toast.error("La conexión se ha perdido.");
+      toast.error("La conexión se ha perdido...");
       setLastConnectionState(false); // Actualiza el estado de la conexión
     }
   }, [isConnected, lastConnectionState]); // Dependencias actualizadas
