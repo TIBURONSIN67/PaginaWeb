@@ -17,7 +17,6 @@ export const WebSocketLogin = ({
   isConnected,
 }: WebSocketProps) => {
   const [inputIp, setInputIp] = useState(""); // Estado para la IP temporal
-  const [lastConnectionState, setLastConnectionState] = useState<boolean | null>(null); // Estado para controlar las notificaciones
 
   const handleConnect = () => {
     if (inputIp.trim() === "") {
@@ -31,15 +30,18 @@ export const WebSocketLogin = ({
     setInputIp(e.target.value); // Actualiza la IP temporal
   };
 
+  // Efecto para manejar las notificaciones de éxito o fallo en la conexión
   useEffect(() => {
-    if (isConnected && lastConnectionState !== true) {
-      toast.success("Conexión establecida correctamente.");
-      setLastConnectionState(true); // Actualiza el estado de la conexión
-    } else if (!isConnected && lastConnectionState !== false) {
+   if (!isConnected) {
       toast.error("La conexión se ha perdido...");
-      setLastConnectionState(false); // Actualiza el estado de la conexión
     }
-  }, [isConnected, lastConnectionState]); // Dependencias actualizadas
+  }, [isConnected]);
+
+  useEffect(()=> {
+    if(error){
+      toast.error(error);
+    }
+  },[error]);
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full p-4 bg-gray-100">
@@ -51,7 +53,6 @@ export const WebSocketLogin = ({
         value={inputIp}
         onChange={handleUrlChange}
         className="border border-yellow-600 p-3 mb-4 w-full max-w-md text-center rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-600"
-        style={{ fontSize: '1.2rem' }} // Aumenta el tamaño de fuente para facilitar la lectura
       />
       <SendButton
         text="Conectar"
@@ -59,7 +60,6 @@ export const WebSocketLogin = ({
         extraClassName="w-full max-w-md bg-yellow-600 text-white px-4 py-3 rounded hover:bg-yellow-900 transition duration-300"
         isLoading={isLoading}
       />
-      {error && <p className="text-red-500 mt-4">{error}</p>}
     </div>
   );
 };

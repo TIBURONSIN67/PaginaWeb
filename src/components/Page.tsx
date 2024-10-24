@@ -15,9 +15,15 @@ export function Page({ extraClassName, children, backButton }: BackPageProps) {
                 </h1>
             </header>
             <main className="flex-grow flex justify-center items-center">
-                {/* Cambiar a flex-col en pantallas pequeñas */}
                 <div className="w-[90%] h-[74vh] bg-white border-2 border-gray-300 rounded-2xl shadow-md flex flex-col md:flex-row p-4 relative">
-                    <div className="flex flex-col md:flex-row justify-center items-center gap-4 flex-grow">
+                <div className="
+                    flex
+                    sm:flex-row gap-2
+                    justify-center 
+                    md:gap-20 flex-col
+                    items-center 
+                    flex-grow"
+                >
                         {children} 
                     </div>
                     <div className="absolute right-5">

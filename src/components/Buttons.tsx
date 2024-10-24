@@ -2,7 +2,7 @@
 // Interfaz base para los botones
 interface BaseButtonProps {
   onClick?: () => void; // Permitir un manejador de clics
-  pressed?: boolean;
+  isPressed?: boolean;
   extraClassName?: string; // Permitir estilos adicionales
 }
 
@@ -94,7 +94,7 @@ export function MovementControlButton(
   { 
     text, 
     onClick, 
-    pressed: isPressed,
+    isPressed,
     extraClassName 
 
   }: TextButtonProps) {
@@ -104,8 +104,6 @@ export function MovementControlButton(
       className={`
         text-white font-bold rounded-xl 
         ${isPressed ? 'bg-blue-900' : 'bg-blue-600'} 
-        hover:shadow-xl transition 
-        duration-300 ease-in-out
         ${isPressed ? 'scale-95' : 'scale-100'} 
         w-[120px] h-10
         ${extraClassName} 
@@ -118,9 +116,9 @@ export function MovementControlButton(
 }
 
 interface EventButtonProps extends TextButtonProps {
-  handleTouchStart: () => void;
-  handleTouchEnd: () => void;
-  isPressed: boolean;
+  handleTouchStart?: () => void;
+  handleTouchEnd?: () => void;
+  isPressed?: boolean;
 }
 
 // Componente para botones de control de dirección
@@ -136,18 +134,22 @@ export function DirectionControlButton(
 
   return (
     <button
-      onTouchStart={handleTouchStart} // Cambiado para manejar el inicio del toque
-      onTouchEnd={handleTouchEnd} // Cambiado para manejar el final del toque
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       className={`
         ${isPressed ? 'bg-yellow-900' : 'bg-yellow-600'} 
         text-white font-bold rounded-xl 
-        transition duration-300 ease-in-out w-[200px] h-[60px]
+        transition duration-300 
+        ease-in-out 
+        w-[160px]  md:w-[180px] 
+        h-[50px]  md:h-[70px] 
         ${extraClassName}
       `}
-      aria-label={text} // Accesibilidad
-    >
-      {text}
-    </button>
+      aria-label={text}
+  >
+    {text}
+  </button>
+  
   );
 }
 

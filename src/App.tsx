@@ -2,8 +2,7 @@ import { useState } from "react";
 import { GameModeSelectionPage } from "./Pages/GameModeSectionPage";
 import { MainMenu } from "./Pages/MainMenuPage";
 import { SettingsPage } from "./Pages/SettingsPage";
-import { ControlModePage } from "./Pages/ControlModePage";
-import { GyroModePage } from "./Pages/GyroModePage";
+import { ControlPage } from "./Pages/ControlPage";
 import { LoginModePage } from "./Pages/LoginModePage";
 import { useWebSocketConnection } from "./hooks/HookHandleSocket"; // Importa el hook
 
@@ -49,25 +48,6 @@ function App() {
     }
   };
 
-  // Página protegida por WebSocket (ControlMode y GyroMode)
-  const renderWebSocketPage = (PageComponent: any) => {
-    return isConnected ? (
-      <PageComponent 
-        onBackClick={handleBackClick} 
-        sendMovementData={sendMovementData} 
-        isConnected={isConnected} 
-      />
-    ) : (
-      <LoginModePage 
-        isConnected={isConnected} 
-        error={error} 
-        connectWebSocket={connectWebSocket} 
-        onBackClick={handleBackClick} 
-        isLoading={isLoading} 
-      />
-    );
-  };
-
   // Renderizado de la página actual
   const renderPage = () => {
     switch (currentPage.name) {
@@ -80,9 +60,43 @@ function App() {
           />
         );
       case "controlMode":
-        return renderWebSocketPage(ControlModePage);
+        return (
+          isConnected ? (
+            <ControlPage 
+              onBackClick={handleBackClick} 
+              sendMovementData={sendMovementData} 
+              isConnected={isConnected}
+              gyro={false} 
+            />
+          ) : (
+            <LoginModePage 
+              isConnected={isConnected} 
+              error={error} 
+              connectWebSocket={connectWebSocket} 
+              onBackClick={handleBackClick} 
+              isLoading={isLoading} 
+            />
+          )
+        );
       case "gyroMode":
-        return renderWebSocketPage(GyroModePage);
+        return (
+          isConnected ? (
+            <ControlPage 
+              onBackClick={handleBackClick} 
+              sendMovementData={sendMovementData} 
+              isConnected={isConnected}
+              gyro={true} 
+            />
+          ) : (
+            <LoginModePage 
+              isConnected={isConnected} 
+              error={error} 
+              connectWebSocket={connectWebSocket} 
+              onBackClick={handleBackClick} 
+              isLoading={isLoading} 
+            />
+          )
+        );
       case "settings":
         return <SettingsPage onBackClick={handleBackClick} />;
       default:

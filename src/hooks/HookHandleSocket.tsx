@@ -20,7 +20,7 @@ export const useWebSocketConnection = () => {
     setIp(newIp);
 
     if (!isValidIp(newIp)) {
-      setError("La IP ingresada no es válida. Debe ser una IP en el rango 192.168.x.x.");
+      setError("IP no valida deve ser 192.168.x.x.");
       return;
     }
 
@@ -43,27 +43,22 @@ export const useWebSocketConnection = () => {
 
     newSocket.addEventListener('error', (event) => {
       console.error('Error en la conexión del WebSocket:', event);
-      setError('Error de conexión');
-      setIsConnected(false);
-      setIsLoading(false);
-      resetConnection(); // Restablecer el estado inicial
+      setError('Error de conexión Verifique la IP');
+      resetConnectionValues();
     });
 
     newSocket.addEventListener('close', () => {
       console.log('Conexión WebSocket cerrada');
-      setIsConnected(false);
-      setIsLoading(false);
-      resetConnection(); // Restablecer el estado inicial
+      resetConnectionValues();
     });
 
     setSocket(newSocket);
   }, []);
 
   // Restablecer todos los valores al estado inicial
-  const resetConnection = useCallback(() => {
+  const resetConnectionValues = useCallback(() => {
     setIp("");
     setIsConnected(false);
-    setError(null);
     setIsLoading(false);
     setSocket(null);
   }, []);
@@ -72,7 +67,6 @@ export const useWebSocketConnection = () => {
   const disconnectWebSocket = useCallback(() => {
     if (socket) {
       socket.close();
-      setSocket(null);
     }
   }, [socket]);
 
@@ -89,14 +83,13 @@ export const useWebSocketConnection = () => {
   };
 
   return {
-    ip,
+    ip, //
     setIp, // Permitir que el componente hijo actualice la IP
-    isConnected,
-    error,
-    isLoading,
-    connectWebSocket, // Función para conectar manualmente
-    disconnectWebSocket,
-    sendMovementData,
-    resetConnection, // Restablecer manualmente si se necesita
+    isConnected, //
+    error, //
+    isLoading, //
+    connectWebSocket,  //
+    disconnectWebSocket, //
+    sendMovementData, //
   };
 };

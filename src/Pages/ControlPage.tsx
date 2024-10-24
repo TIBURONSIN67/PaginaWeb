@@ -1,25 +1,24 @@
 import { BackButton } from "../components/Buttons";
 import { Page } from "../components/Page";
-import { useState } from "react";
 import { SectionControlMovement } from "../components/sections/SectionControlMovement";
+import { SectionGyroMovement } from "../components/sections/SectionGyroMovement";
+import { useState } from "react";
 
-interface GyroModePageProps {
+interface ControlPageProps {
   onBackClick: () => void;
   gyro?: boolean;
   sendMovementData: (comand:string)=> void;
   isConnected: boolean;
 }
 
-export function GyroModePage(
+export function ControlPage(
   { 
     onBackClick,
-    gyro,
     sendMovementData,
-    isConnected, 
-  }: GyroModePageProps) {
+    isConnected,
+    gyro,
+  }: ControlPageProps) {
   const [resetFunction, setResetFunction] = useState<(() => void) | null>(null);
-
-  // Utiliza el hook para obtener sendMovementData
 
   // Función que recibirá el "reset" del hijo
   const handleReceiveResetFunction = (resetFunc: () => void) => {
@@ -46,12 +45,19 @@ export function GyroModePage(
         />
       }
     >
-      <SectionControlMovement 
-        gyro={gyro}
+    {gyro?(
+      <SectionGyroMovement 
+        passResetFunctionToParent={handleReceiveResetFunction} 
+        isConnected={isConnected}
         sendMovementData={sendMovementData}
-        isConnected={isConnected} 
-        passResetFunctionToParent={handleReceiveResetFunction}
       />
+    ):(
+      <SectionControlMovement 
+        passResetFunctionToParent={handleReceiveResetFunction} 
+        isConnected={isConnected}
+        sendMovementData={sendMovementData}
+      />
+    )}
     </Page>
   );
 }
