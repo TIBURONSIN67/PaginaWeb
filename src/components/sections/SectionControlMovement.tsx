@@ -32,6 +32,8 @@ export function SectionControlMovement(
         isRight: false,
       }
     )
+  const [leftIsPressed, setLeftIsPressed] = useState(false);
+  const [RightIsPressed, setRightIsPressed] = useState(false);
     // Función para restablecer el estado del movimiento y las luces
   const resetFunction = useCallback(() => {
     sendMovementData(movementCommands.STOP);
@@ -67,16 +69,19 @@ export function SectionControlMovement(
 
   //control izquierda
   const handleLeftTouchStart = ()=>{
+    setLeftIsPressed(true);      
     sendMovementData(movementCommands.LEFT);
     setMovementState({...movementState, isLeft: true})
   }
     //control Derecha
   const handleRightTouchStart = ()=>{
+    setRightIsPressed(true);             
     sendMovementData(movementCommands.RIGHT);
     setMovementState({...movementState, isRight: true})
   }
 
   const handleLeftTouchEnd = ()=>{
+    setLeftIsPressed(false);
     if (movementState.isBackward){
       sendMovementData(movementCommands.BACKWARD);
     }else if (movementState.isForward){
@@ -87,6 +92,7 @@ export function SectionControlMovement(
     setMovementState({...movementState, isLeft: false})
   }
   const handleRightTouchEnd = ()=>{
+    setRightIsPressed(false);
     if (movementState.isBackward){
       sendMovementData(movementCommands.BACKWARD);
     }else if (movementState.isForward){
@@ -114,11 +120,13 @@ export function SectionControlMovement(
         <DirectionControlButton 
           text="<" 
           handleTouchStart={handleLeftTouchStart} 
-          handleTouchEnd={handleLeftTouchEnd} 
+          handleTouchEnd={handleLeftTouchEnd}
+          isPressed={leftIsPressed} 
           />
         <DirectionControlButton text=">" 
           handleTouchStart={handleRightTouchStart}
           handleTouchEnd={handleRightTouchEnd}
+          isPressed={RightIsPressed}
          />
       </div>
     </section>

@@ -1,8 +1,9 @@
-import { useState, useCallback} from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 // Función para validar formato de la IP
 const isValidIp = (ip: string) => {
-  const ipRegex = /^(192\.168\.\d{1,3}\.\d{1,3})$/;
+  // Validar IP en el rango 192.168.x.x
+  const ipRegex = /^(192\.168\.(1?\d{1,2}|2[0-4][0-9]|25[0-5]|[1-9]?\d)\.(1?\d{1,2}|2[0-4][0-9]|25[0-5]|[1-9]?\d))$/;
   return ipRegex.test(ip);
 };
 
@@ -20,14 +21,14 @@ export const useWebSocketConnection = () => {
     setIp(newIp);
 
     if (!isValidIp(newIp)) {
-      setError("IP no valida deve ser 192.168.x.x.");
+      setError("IP no válida, debe ser 192.168.x.x.");
       return;
     }
 
     setIsLoading(true);
     setError(null); // Limpiar error al intentar conectar
 
-    const webSocketUrl = `ws://${newIp}/ws`;
+    const webSocketUrl = `ws://${newIp}:5000/ws`;
     const newSocket = new WebSocket(webSocketUrl);
 
     newSocket.addEventListener('open', () => {
@@ -38,12 +39,12 @@ export const useWebSocketConnection = () => {
     });
 
     newSocket.addEventListener('message', (event) => {
-      console.log('Mensaje recibido:', event.data);
+      console.log('Ms Server:', event.data);
     });
 
     newSocket.addEventListener('error', (event) => {
       console.error('Error en la conexión del WebSocket:', event);
-      setError('Error de conexión Verifique la IP');
+      setError('Error de conexión, verifique la IP');
       resetConnectionValues();
     });
 
@@ -67,6 +68,7 @@ export const useWebSocketConnection = () => {
   const disconnectWebSocket = useCallback(() => {
     if (socket) {
       socket.close();
+      console.log('Conexión WebSocket cerrada manualmente');
     }
   }, [socket]);
 
@@ -82,14 +84,21 @@ export const useWebSocketConnection = () => {
     }
   };
 
+  // Limpiar el socket al desmontar el componente
+  useEffect(() => {
+    return () => {
+      disconnectWebSocket();
+    };
+  }, [disconnectWebSocket]);
+
   return {
-    ip, //
+    ip,
     setIp, // Permitir que el componente hijo actualice la IP
-    isConnected, //
-    error, //
-    isLoading, //
-    connectWebSocket,  //
-    disconnectWebSocket, //
-    sendMovementData, //
+    isConnected,
+    error,
+    isLoading,
+    connectWebSocket,
+    disconnectWebSocket,
+    sendMovementData,
   };
 };
