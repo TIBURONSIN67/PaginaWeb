@@ -2,8 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 
 // Función para validar formato de la IP
 const isValidIp = (ip: string) => {
-  // Validar IP en el rango 192.168.x.x
-  const ipRegex = /^(192\.168\.(1?\d{1,2}|2[0-4][0-9]|25[0-5]|[1-9]?\d)\.(1?\d{1,2}|2[0-4][0-9]|25[0-5]|[1-9]?\d))$/;
+  const ipRegex = /^192\.168\.(\d{1,255})\.(\d{1,255})$/;
   return ipRegex.test(ip);
 };
 
