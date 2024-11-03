@@ -46,7 +46,7 @@ export default defineConfig({
       }
     })
   ],
-  base:"https://TIBURONSIN67.github.io/PaginaWeb",
+  base:"https://tiburonsin67.github.io/PaginaWeb",
   server: {
     host: true,
     port: 5173,
