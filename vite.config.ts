@@ -46,11 +46,12 @@ export default defineConfig({
       }
     })
   ],
+  base:"https://TIBURONSIN67.github.io/PaginaWeb",
   server: {
     host: true,
     port: 5173,
   },
   build: {
-    outDir: '../BackEnd/dist',
+    outDir: 'dist',
   },
 })

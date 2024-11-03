@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('https://TIBURONSIN67.github.io/PaginaWeb/sw.js', { scope: 'https://TIBURONSIN67.github.io/PaginaWeb/' })})}
