@@ -13,7 +13,36 @@ export default defineConfig({
         name: "Super Lambo",
         description: "Super Lambo",
         theme_color: "#000000", 
-        background_color: "#121212" 
+        background_color: "#121212",
+        scope: "/", 
+        start_url: "/",
+        icons: [
+          {
+            src: '/icon-128x128.png', // Icono de 128x128
+            sizes: '128x128',
+            type: 'image/png',
+          },
+          {
+            src: '/icon-192x192.png', // Icono de 192x192
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: '/icon-512x512.png', // Icono de 512x512
+            sizes: '512x512',
+            type: 'image/png',
+          },
+          {
+            src: '/icon-384x384.png', // Otras resoluciones si es necesario
+            sizes: '384x384',
+            type: 'image/png',
+          },
+        ],
+      },
+      registerType: 'autoUpdate', // El SW se actualizará automáticamente
+      workbox: {
+        clientsClaim: true,
+        skipWaiting: true,
       }
     })
   ],
