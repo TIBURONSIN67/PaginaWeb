@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect } from 'react';
 // Hook para manejar la conexión WebSocket
 export const useWebSocketConnection = () => {
   const [ip, setIp] = useState(""); // IP actual
-  const [state, setState] = useState<any[]>([]); 
+  const [state, setState] = useState<any>({}); 
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,12 +28,11 @@ export const useWebSocketConnection = () => {
     });
 
     newSocket.addEventListener('message', (event) => {
-      console.log('Mensaje del servidor:', event.data);
-
       // Agregar el nuevo mensaje JSON al array de mensajes
       try {
         const data = JSON.parse(event.data); // Parsear el mensaje JSON
-        setState((prevState) => [...prevState, data]); // Agregar el mensaje al estado
+        setState(data); // Agregar el mensaje al estado
+        console.log(state);
       } catch (e) {
         console.error("Error al parsear JSON:", e);
         setError("Error al recibir datos JSON.");

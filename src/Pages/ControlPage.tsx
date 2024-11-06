@@ -9,6 +9,7 @@ interface ControlPageProps {
   gyro?: boolean;
   sendMovementData: (comand:string)=> void;
   isConnected: boolean;
+  state: string;
 }
 
 export function ControlPage(
@@ -17,6 +18,7 @@ export function ControlPage(
     sendMovementData,
     isConnected,
     gyro,
+    state
   }: ControlPageProps) {
   const [resetFunction, setResetFunction] = useState<(() => void) | null>(null);
 
@@ -50,12 +52,14 @@ export function ControlPage(
         passResetFunctionToParent={handleReceiveResetFunction} 
         isConnected={isConnected}
         sendMovementData={sendMovementData}
+        state={state}
       />
     ):(
       <SectionControlMovement 
         passResetFunctionToParent={handleReceiveResetFunction} 
         isConnected={isConnected}
         sendMovementData={sendMovementData}
+        state={state}
       />
     )}
     </Page>

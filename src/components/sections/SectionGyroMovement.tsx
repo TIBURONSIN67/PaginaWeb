@@ -7,6 +7,7 @@ interface SectionGyroMovementProps {
   passResetFunctionToParent: (resetFunc: () => void) => void;
   sendMovementData: (command: string) => void;
   isConnected: boolean;
+  state: string;
 }
 const movementCommands = {
   FORWARD: "FORWARD",
@@ -21,7 +22,8 @@ export function SectionGyroMovement(
   { 
     passResetFunctionToParent, 
     sendMovementData,
-    isConnected
+    isConnected,
+    state
   }: SectionGyroMovementProps) {
   const [movementState, setMovementState] = useState({
     isBackward: false,
@@ -41,6 +43,10 @@ export function SectionGyroMovement(
       toast.success("Conexión establecida correctamente.");
     }
   }, [isConnected]);
+
+  useEffect(()=>{
+    console.log("gyro holaaa");
+  },[state])
 
   // Función para restablecer el estado del movimiento y las luces
   const resetFunction = useCallback(() => {

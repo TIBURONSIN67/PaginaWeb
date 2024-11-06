@@ -28,7 +28,8 @@ function App() {
     connectWebSocket, 
     isLoading, 
     error, 
-    sendMovementData 
+    sendMovementData ,
+    state
   } = useWebSocketConnection();
 
   // Cambio de página
@@ -67,6 +68,7 @@ function App() {
               sendMovementData={sendMovementData} 
               isConnected={isConnected}
               gyro={false} 
+              state={state}
             />
           ) : (
             <LoginModePage 
@@ -74,7 +76,7 @@ function App() {
               error={error} 
               connectWebSocket={connectWebSocket} 
               onBackClick={handleBackClick} 
-              isLoading={isLoading} 
+              isLoading={isLoading}
             />
           )
         );
@@ -86,6 +88,7 @@ function App() {
               sendMovementData={sendMovementData} 
               isConnected={isConnected}
               gyro={true} 
+              state={state}
             />
           ) : (
             <LoginModePage 

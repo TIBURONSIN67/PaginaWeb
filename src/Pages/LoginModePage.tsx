@@ -24,7 +24,7 @@ export function LoginModePage(
       backButton={<BackButton text="Volver" aria-label="Volver" onClick={onBackClick} />}
     >
       <WebSocketLogin
-         isConnected={isConnected}
+        isConnected={isConnected}
         isLoading={isLoading} 
         error={error} 
         connectWebSocket={connectWebSocket}  />

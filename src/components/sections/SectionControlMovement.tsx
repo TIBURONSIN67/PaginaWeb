@@ -7,6 +7,7 @@ interface SectionControlMovementProps {
   passResetFunctionToParent: (resetFunc: () => void) => void;
   sendMovementData: (command: string) => void;
   isConnected: boolean;
+  state: string;
 }
 const movementCommands = {
   FORWARD: "FORWARD",
@@ -21,7 +22,8 @@ export function SectionControlMovement(
   { 
     passResetFunctionToParent, 
     sendMovementData,
-    isConnected
+    isConnected,
+    state
   }: SectionControlMovementProps) {
     const [movementState, setMovementState] = useState(
       {
@@ -48,6 +50,10 @@ export function SectionControlMovement(
   useEffect(()=>{
     toast.success("Conexión establecida correctamente.");
   },[isConnected])
+
+  useEffect(()=>{
+    console.log("hola");
+  },[state])
     // Alternar el estado de la luz
   const toggleLight = () => {
     const newLightState = !movementState.isLight;
