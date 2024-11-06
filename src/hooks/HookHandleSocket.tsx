@@ -1,14 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 
-// Función para validar formato de la IP
-const isValidIp = (ip: string) => {
-  const ipRegex = /^192\.168\.(\d{1,255})\.(\d{1,255})$/;
-  return ipRegex.test(ip);
-};
-
 // Hook para manejar la conexión WebSocket
 export const useWebSocketConnection = () => {
   const [ip, setIp] = useState(""); // IP actual
+  const [state, setState] = useState<any[]>([]); 
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -18,11 +13,6 @@ export const useWebSocketConnection = () => {
   const connectWebSocket = useCallback((newIp: string) => {
     // Actualiza la IP antes de la conexión
     setIp(newIp);
-
-    if (!isValidIp(newIp)) {
-      setError("IP no válida, debe ser 192.168.x.x.");
-      return;
-    }
 
     setIsLoading(true);
     setError(null); // Limpiar error al intentar conectar
@@ -38,7 +28,16 @@ export const useWebSocketConnection = () => {
     });
 
     newSocket.addEventListener('message', (event) => {
-      console.log('Ms Server:', event.data);
+      console.log('Mensaje del servidor:', event.data);
+
+      // Agregar el nuevo mensaje JSON al array de mensajes
+      try {
+        const data = JSON.parse(event.data); // Parsear el mensaje JSON
+        setState((prevState) => [...prevState, data]); // Agregar el mensaje al estado
+      } catch (e) {
+        console.error("Error al parsear JSON:", e);
+        setError("Error al recibir datos JSON.");
+      }
     });
 
     newSocket.addEventListener('error', (event) => {
@@ -95,6 +94,7 @@ export const useWebSocketConnection = () => {
     setIp, // Permitir que el componente hijo actualice la IP
     isConnected,
     error,
+    state, // Exponer el array de mensajes JSO
     isLoading,
     connectWebSocket,
     disconnectWebSocket,

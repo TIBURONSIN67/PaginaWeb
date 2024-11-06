@@ -16,7 +16,7 @@ export const WebSocketLogin = ({
   connectWebSocket,
   isConnected,
 }: WebSocketProps) => {
-  const [inputIp, setInputIp] = useState(""); // Estado para la IP temporal
+  const [inputIp, setInputIp] = useState("192.168."); // Estado para la IP temporal
 
   const handleConnect = () => {
     if (inputIp.trim() === "") {
