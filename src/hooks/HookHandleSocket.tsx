@@ -29,6 +29,7 @@ export const useWebSocketConnection = () => {
 
     newSocket.addEventListener('message', (event) => {
       // Agregar el nuevo mensaje JSON al array de mensajes
+      console.log("h");
       try {
         const data = JSON.parse(event.data); // Parsear el mensaje JSON
         setState(data); // Agregar el mensaje al estado

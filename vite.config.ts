@@ -14,8 +14,8 @@ export default defineConfig({
         description: "Super Lambo",
         theme_color: "#000000", 
         background_color: "#121212",
-        scope: "/app-local/",
-        start_url: "/app-local/index.html",
+        scope: "/",
+        start_url: "/",
         icons: [
           {
             src: '/icon-128x128.png',
@@ -84,5 +84,4 @@ export default defineConfig({
   build: {
     outDir: 'dist',
   },
-  base:"./"
 });
