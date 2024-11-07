@@ -188,3 +188,41 @@ export function LightButton(
     </button>
   );
 }
+
+interface HornButtonProps extends BaseButtonProps {
+  handleTouchStart: () => void;
+  handleTouchEnd: () => void;
+  isPressed: boolean;
+}
+
+export function HornButton({
+  handleTouchStart,
+  handleTouchEnd,
+  extraClassName,
+  isPressed
+}: HornButtonProps) {
+
+
+  return (
+    <button
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      className={`
+        ${isPressed ? 'bg-yellow-400 shadow-lg shadow-lg animate-pulse' : 'bg-gray-300'}
+        rounded-full 
+        transition duration-100 ease-in-out 
+        w-16 h-16 
+        flex items-center justify-center 
+        ${extraClassName}
+      `}
+      aria-label={isPressed ? "Horn On" : "Horn Off"} // Accesibilidad
+    >
+      {isPressed && (
+        <div className="absolute w-20 h-20 rounded-full bg-yellow-500 opacity-70 -z-10 animate-ping" />
+      )}
+      <span className={`${isPressed ? 'text-yellow-900' : 'text-gray-500'} text-2xl font-bold`}>
+        {isPressed ? '📢' : '🔇'}
+      </span>
+    </button>
+  );
+}

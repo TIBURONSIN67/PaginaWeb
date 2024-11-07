@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback} from "react";
-import { MovementControlButton, LightButton, DirectionControlButton } from "../Buttons";
+import { MovementControlButton, LightButton, DirectionControlButton, HornButton } from "../Buttons";
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer, toast} from 'react-toastify';
 
@@ -7,7 +7,7 @@ interface SectionControlMovementProps {
   passResetFunctionToParent: (resetFunc: () => void) => void;
   sendMovementData: (command: string) => void;
   isConnected: boolean;
-  state: string;
+  serverState: {[key: string]: string};
 }
 const movementCommands = {
   FORWARD: "FORWARD",
@@ -17,13 +17,15 @@ const movementCommands = {
   RIGHT: "RIGHT",
   LIGHT_ON: "LIGHT_ON",
   LIGHT_OFF: "LIGHT_OFF",
+  HORN_ON: "HORN_ON",
+  HORN_OFF: "HORN_OFF",
 };
 export function SectionControlMovement(
   { 
     passResetFunctionToParent, 
     sendMovementData,
     isConnected,
-    state
+    serverState
   }: SectionControlMovementProps) {
     const [movementState, setMovementState] = useState(
       {
@@ -32,10 +34,13 @@ export function SectionControlMovement(
         isBackward: false,
         isLeft: false,
         isRight: false,
+        isHorn: false,
       }
     )
   const [leftIsPressed, setLeftIsPressed] = useState(false);
   const [RightIsPressed, setRightIsPressed] = useState(false);
+
+  const [hornPressed, setHornPressed] = useState(false);
     // Función para restablecer el estado del movimiento y las luces
   const resetFunction = useCallback(() => {
     sendMovementData(movementCommands.STOP);
@@ -52,8 +57,16 @@ export function SectionControlMovement(
   },[isConnected])
 
   useEffect(()=>{
-    console.log("hola");
-  },[state])
+    if (serverState.state === "STOP"){
+      setMovementState(
+        {...movementState, 
+          isForward: false, 
+          isBackward: false, 
+        });
+      sendMovementData(movementCommands.STOP);
+      console.log("el servidor detecto peligro",serverState)
+    }
+  },[serverState])
     // Alternar el estado de la luz
   const toggleLight = () => {
     const newLightState = !movementState.isLight;
@@ -108,13 +121,30 @@ export function SectionControlMovement(
     }
     setMovementState({...movementState, isRight: false})
   }
+
+  const handleHornTouchStart = ()=>{
+    setHornPressed(true);             
+    sendMovementData(movementCommands.HORN_ON);
+    setMovementState({...movementState, isHorn: true})
+  }
+
+  const handleHornTouchEnd = ()=>{
+    setHornPressed(false);
+    setMovementState({...movementState, isHorn: false})
+    sendMovementData(movementCommands.HORN_OFF);
+  }
   return (
     <section className="flex flex-col items-center space-y-6 w-full h-full justify-center">
       <ToastContainer />
-      <div>
+      <div className="flex flex-row items-center justify-around w-full">
         <LightButton onClick={toggleLight} isOn={movementState.isLight} />
+        <HornButton 
+          handleTouchEnd={handleHornTouchEnd} 
+          handleTouchStart={handleHornTouchStart}
+          isPressed={hornPressed}
+        />
       </div>
-      <div className="flex space-x-4">
+      <div className="flex flex-row justify-center gap-x-16 w-full">
         <MovementControlButton text="D" onClick={controlForward} isPressed={movementState.isForward}/>
         <MovementControlButton text="R" onClick={controlBackward} isPressed={movementState.isBackward}/>
       </div>

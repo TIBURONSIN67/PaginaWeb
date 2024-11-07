@@ -68,7 +68,7 @@ function App() {
               sendMovementData={sendMovementData} 
               isConnected={isConnected}
               gyro={false} 
-              state={state}
+              serverState={state}
             />
           ) : (
             <LoginModePage 
@@ -88,7 +88,7 @@ function App() {
               sendMovementData={sendMovementData} 
               isConnected={isConnected}
               gyro={true} 
-              state={state}
+              serverState={state}
             />
           ) : (
             <LoginModePage 

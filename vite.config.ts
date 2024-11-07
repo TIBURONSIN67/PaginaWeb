@@ -15,28 +15,11 @@ export default defineConfig({
         theme_color: "#000000", 
         background_color: "#121212",
         scope: "/",
-        start_url: "/",
+        start_url: "./index.html",
         icons: [
-          {
-            src: '/icon-128x128.png',
-            sizes: '128x128',
-            type: 'image/png',
-          },
-          {
-            src: '/icon-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-          },
-          {
-            src: '/icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-          },
-          {
-            src: '/icon-384x384.png',
-            sizes: '384x384',
-            type: 'image/png',
-          },
+          { src: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/icon-384x384.png', sizes: '384x384', type: 'image/png' },
         ],
       },
       registerType: 'autoUpdate',
@@ -74,6 +57,7 @@ export default defineConfig({
       },
     })
   ],
+  base:"./",
   server: {
     host: true,
     port: 5173,
