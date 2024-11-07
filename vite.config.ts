@@ -72,9 +72,6 @@ export default defineConfig({
           },
         ],
       },
-      devOptions: {
-        enabled: true, // permite probar el Service Worker en desarrollo
-      }
     })
   ],
   server: {
