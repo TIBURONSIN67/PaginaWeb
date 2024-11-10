@@ -12,6 +12,7 @@ export default defineConfig({
         lang: "es-ES",
         name: "Super Lambo",
         description: "Super Lambo",
+        short_name: "Lambo", // Nombre corto para ciertas interfaces de usuario
         theme_color: "#000000", 
         background_color: "#121212",
         scope: "/",
@@ -19,7 +20,7 @@ export default defineConfig({
         icons: [
           { src: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icon-512x512.png', sizes: '512x512', type: 'image/png' },
-          { src: '/icon-384x384.png', sizes: '384x384', type: 'image/png' },
+          { src: '/icon-72x72.png', sizes: '72x72', type: 'image/png' },
         ],
       },
       registerType: 'autoUpdate',

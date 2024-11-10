@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback} from "react";
-import { MovementControlButton, LightButton } from "../Buttons";
+import { MovementControlButton, LightButton, HornButton } from "../Buttons";
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer, toast } from 'react-toastify';
 
@@ -17,6 +17,8 @@ const movementCommands = {
   RIGHT: "RIGHT",
   LIGHT_ON: "LIGHT_ON",
   LIGHT_OFF: "LIGHT_OFF",
+  HORN_ON: "HORN_ON",
+  HORN_OFF: "HORN_OFF",
 };
 export function SectionGyroMovement(
   { 
@@ -31,11 +33,12 @@ export function SectionGyroMovement(
     isLeft: false,
     isRight: false,
     isLight: false,
+    isHorn: false,
   });
 
   const [isNone, setNone] = useState(false)
 
-  // Variable para almacenar el estado anterior
+  const [hornPressed, setHornPressed] = useState(false);
 
   // Efecto cuando se establece la conexión
   useEffect(() => {
@@ -50,9 +53,8 @@ export function SectionGyroMovement(
         {...movementState, 
           isForward: false, 
           isBackward: false, 
-          isLeft: false, 
-          isRight:false
         });
+      sendMovementData(movementCommands.STOP);
       console.log("el servidor detecto peligro",serverState)
     }
   },[serverState])
@@ -131,12 +133,28 @@ export function SectionGyroMovement(
     };
   }, [movementState.isLeft, movementState.isRight, movementState.isBackward, movementState.isForward, sendMovementData]);
   
+  const handleHornTouchStart = ()=>{
+    setHornPressed(true);             
+    sendMovementData(movementCommands.HORN_ON);
+    setMovementState({...movementState, isHorn: true})
+  }
+
+  const handleHornTouchEnd = ()=>{
+    setHornPressed(false);
+    setMovementState({...movementState, isHorn: false})
+    sendMovementData(movementCommands.HORN_OFF);
+  }
 
   return (
     <section className="flex flex-col items-center space-y-6 w-full h-full justify-center">
       <ToastContainer />
       <div>
         <LightButton isOn={movementState.isLight} onClick={toggleLight} />
+        <HornButton 
+          handleTouchEnd={handleHornTouchEnd}
+          handleTouchStart={handleHornTouchStart}
+          isPressed={hornPressed}
+        />
       </div>
       <div className="flex space-x-4">
         <MovementControlButton text="D" isPressed={movementState.isForward} onClick={controlForward} />
