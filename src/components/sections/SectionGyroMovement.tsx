@@ -148,7 +148,7 @@ export function SectionGyroMovement(
   return (
     <section className="flex flex-col items-center space-y-6 w-full h-full justify-center">
       <ToastContainer />
-      <div>
+      <div className="flex flex-row items-center justify-around w-full">
         <LightButton isOn={movementState.isLight} onClick={toggleLight} />
         <HornButton 
           handleTouchEnd={handleHornTouchEnd}
