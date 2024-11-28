@@ -9,7 +9,7 @@ interface ControlPageProps {
   gyro?: boolean;
   sendMovementData: (comand:string)=> void;
   isConnected: boolean;
-  serverState: {[key: string]: string} ;
+  serverState: {[key: string]: string};
 }
 
 export function ControlPage(

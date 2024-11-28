@@ -101,7 +101,20 @@ function App() {
           )
         );
       case "settings":
-        return <SettingsPage onBackClick={handleBackClick} />;
+        return (
+
+          isConnected ? (
+          <SettingsPage onBackClick={handleBackClick} sendMovementData={sendMovementData}/>
+        ): (
+          <LoginModePage 
+          isConnected={isConnected} 
+          error={error} 
+          connectWebSocket={connectWebSocket} 
+          onBackClick={handleBackClick} 
+          isLoading={isLoading} 
+        />
+        )
+      )
       default:
         return (
           <MainMenu
