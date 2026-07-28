@@ -23,9 +23,12 @@ const PORT = process.env.PORT || 3001;
 logger.info('Database initialized');
 
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? process.env.CORS_ORIGIN
-    : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'https://importadora-jyv.netlify.app'
+  ],
   credentials: true
 }));
 
@@ -41,16 +44,6 @@ app.use('/api/orders', apiLimiter, orderRoutes);
 app.use('/api/customers', apiLimiter, customerRoutes);
 app.use('/api/messages', apiLimiter, messageRoutes);
 app.use('/api/settings', apiLimiter, settingsRoutes);
-
-if (process.env.NODE_ENV === 'production') {
-  const clientDist = path.join(__dirname, '..', 'client', 'dist');
-  app.use(express.static(clientDist));
-  app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
-      res.sendFile(path.join(clientDist, 'index.html'));
-    }
-  });
-}
 
 app.use(notFound);
 app.use(errorHandler);

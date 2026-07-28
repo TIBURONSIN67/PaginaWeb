@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+const API_URL = import.meta.env.PROD
+  ? 'https://paginaweb-l5qe.onrender.com/api'
+  : '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
 });
 
