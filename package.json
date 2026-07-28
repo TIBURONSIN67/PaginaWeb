@@ -1,0 +1,17 @@
+{
+  "name": "mobile-parts-store",
+  "version": "1.0.0",
+  "description": "AI-Powered Mobile Phone Spare Parts Store with WhatsApp Sales Assistant",
+  "type": "module",
+  "scripts": {
+    "setup": "cd server && npm install && cd ../client && npm install",
+    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\"",
+    "build": "cd client && npm run build",
+    "start": "cd server && npm start",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
