@@ -29,8 +29,7 @@ const corsOrigins = process.env.CORS_ORIGIN
       'http://localhost:5173',
       'http://localhost:3000',
       'http://127.0.0.1:5173',
-      'https://importadora-jyv.netlify.app',
-      'https://paginaweb-1-jjlu.onrender.com'
+      'https://tiburonsin.netlify.app'
     ];
 
 app.use(cors({
