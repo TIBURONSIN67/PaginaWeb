@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_URL = import.meta.env.PROD
-  ? 'https://paginaweb-l5qe.onrender.com/api'
+  ? 'https://paginaweb-1-jjlu.onrender.com/api'
   : '/api';
 
 const api = axios.create({
