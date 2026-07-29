@@ -23,6 +23,10 @@ const PORT = process.env.PORT || 3001;
 
 logger.info('Database initialized');
 
+logger.info(`AI Provider: ${process.env.AI_PROVIDER || 'openai'}`);
+logger.info(`DeepSeek Key: ${process.env.DEEPSEEK_API_KEY ? 'configured' : 'NOT SET'}`);
+logger.info(`OpenAI Key: ${process.env.OPENAI_API_KEY ? 'configured' : 'NOT SET'}`);
+
 const corsOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
   : [
