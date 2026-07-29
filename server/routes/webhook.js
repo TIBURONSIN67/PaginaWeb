@@ -26,10 +26,14 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', webhookLimiter, async (req, res) => {
+  console.log("🔥 MENSAJE RECIBIDO DE META");
+  console.log(JSON.stringify(req.body, null, 2));
+
   try {
     const messageData = whatsappService.extractMessageData(req.body);
 
     if (!messageData) {
+      console.log("⚠️ Evento recibido pero no es mensaje");
       return res.status(200).json({ success: true, message: 'Non-message event received' });
     }
 
@@ -57,17 +61,26 @@ router.post('/', webhookLimiter, async (req, res) => {
 
   } catch (err) {
     logger.error('Webhook processing error', err);
+    console.error("❌ ERROR WEBHOOK:", err);
+
     res.status(200).json({ success: true, message: 'Received but processing error' });
   }
 });
 
 router.get('/webhook-status', (req, res) => {
-  const configured = !!(META_CONFIG.accessToken && META_CONFIG.phoneNumberId && META_CONFIG.verifyToken);
+  const configured = !!(
+    META_CONFIG.accessToken &&
+    META_CONFIG.phoneNumberId &&
+    META_CONFIG.verifyToken
+  );
+
   res.json({
     success: true,
     data: {
       configured,
-      phone_number_id: META_CONFIG.phoneNumberId ? `${META_CONFIG.phoneNumberId.substring(0, 8)}...` : null,
+      phone_number_id: META_CONFIG.phoneNumberId
+        ? `${META_CONFIG.phoneNumberId.substring(0, 8)}...`
+        : null,
       verify_token_set: !!META_CONFIG.verifyToken,
       access_token_set: !!META_CONFIG.accessToken,
       graph_api_version: META_CONFIG.graphApiVersion
@@ -79,19 +92,34 @@ router.post('/webhook-test', async (req, res) => {
   const { phone } = req.body;
 
   if (!phone) {
-    return res.status(400).json({ success: false, error: 'Phone number required' });
+    return res.status(400).json({
+      success: false,
+      error: 'Phone number required'
+    });
   }
 
   if (!META_CONFIG.accessToken) {
-    return res.status(400).json({ success: false, error: 'WhatsApp not configured' });
+    return res.status(400).json({
+      success: false,
+      error: 'WhatsApp not configured'
+    });
   }
 
-  const result = await whatsappService.sendMessage(phone, 'This is a test message from Mobile Parts Store. Your WhatsApp integration is working correctly!');
+  const result = await whatsappService.sendMessage(
+    phone,
+    'This is a test message from Mobile Parts Store. Your WhatsApp integration is working correctly!'
+  );
 
   if (result.success) {
-    res.json({ success: true, message: 'Test message sent successfully' });
+    res.json({
+      success: true,
+      message: 'Test message sent successfully'
+    });
   } else {
-    res.status(500).json({ success: false, error: result.error });
+    res.status(500).json({
+      success: false,
+      error: result.error
+    });
   }
 });
 
