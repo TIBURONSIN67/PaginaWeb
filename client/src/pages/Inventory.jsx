@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { inventoryApi } from '../lib/api';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   useInventory,
   useInventoryAlerts,
@@ -63,11 +63,16 @@ function MovementBadge({ type }) {
 }
 
 export default function Inventory() {
-  const { items, loading, error, refetch } = useInventory();
-  const { lowStockCount, outOfStockCount } = useInventoryAlerts();
-  const { stockIn, loading: stockInLoading } = useStockIn();
-  const { stockOut, loading: stockOutLoading } = useStockOut();
-  const { adjustStock, loading: adjustLoading } = useAdjustStock();
+  const queryClient = useQueryClient();
+  const { data: items, isLoading: loading, error, refetch } = useInventory();
+  const { data: alertsData } = useInventoryAlerts();
+  const stockInMutation = useStockIn();
+  const stockOutMutation = useStockOut();
+  const adjustMutation = useAdjustStock();
+
+  const alerts = alertsData?.data || alertsData || {};
+  const lowStockCount = alerts.low_stock_count ?? 0;
+  const outOfStockCount = alerts.out_of_stock_count ?? 0;
 
   const [searchTerm, setSearchTerm] = useState('');
   const [alertFilter, setAlertFilter] = useState(null);
@@ -78,29 +83,31 @@ export default function Inventory() {
   const [showAdjustModal, setShowAdjustModal] = useState(false);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
 
-  const [receiveForm, setReceiveForm] = useState({ productId: '', quantity: '', reason: '', employee: '' });
-  const [removeForm, setRemoveForm] = useState({ productId: '', quantity: '', reason: '', employee: '' });
-  const [adjustForm, setAdjustForm] = useState({ productId: '', newQuantity: '', reason: '' });
+  const [receiveForm, setReceiveForm] = useState({ product_id: '', quantity: '', reason: '', employee: '' });
+  const [removeForm, setRemoveForm] = useState({ product_id: '', quantity: '', reason: '', employee: '' });
+  const [adjustForm, setAdjustForm] = useState({ product_id: '', new_quantity: '', reason: '' });
 
   const [historyProductId, setHistoryProductId] = useState(null);
-  const { history, loading: historyLoading } = useInventoryHistory(historyProductId);
+  const { data: history, isLoading: historyLoading } = useInventoryHistory(historyProductId);
 
-  const filteredItems = (items || [])
+  const productList = items?.data || (Array.isArray(items) ? items : []);
+
+  const filteredItems = productList
     .filter((item) => {
       const term = searchTerm.toLowerCase();
       const matchesSearch =
         !term ||
-        item.name?.toLowerCase().includes(term) ||
+        item.product_name?.toLowerCase().includes(term) ||
         item.sku?.toLowerCase().includes(term) ||
         item.category?.toLowerCase().includes(term);
       if (!matchesSearch) return false;
-      if (alertFilter === 'low') return item.stock > 0 && item.stock <= item.minStock;
+      if (alertFilter === 'low') return item.stock > 0 && item.stock <= item.minimum_stock;
       if (alertFilter === 'out') return item.stock <= 0;
       return true;
     })
     .sort((a, b) => {
       if (alertFilter === 'out') return a.stock - b.stock;
-      if (alertFilter === 'low') return (a.stock - a.minStock) - (b.stock - b.minStock);
+      if (alertFilter === 'low') return (a.stock - a.minimum_stock) - (b.stock - b.minimum_stock);
       return 0;
     });
 
@@ -108,31 +115,30 @@ export default function Inventory() {
     setAlertFilter((prev) => (prev === filter ? null : filter));
   };
 
-  const resetReceiveForm = () => setReceiveForm({ productId: '', quantity: '', reason: '', employee: '' });
-  const resetRemoveForm = () => setRemoveForm({ productId: '', quantity: '', reason: '', employee: '' });
-  const resetAdjustForm = () => setAdjustForm({ productId: '', newQuantity: '', reason: '' });
+  const resetReceiveForm = () => setReceiveForm({ product_id: '', quantity: '', reason: '', employee: '' });
+  const resetRemoveForm = () => setRemoveForm({ product_id: '', quantity: '', reason: '', employee: '' });
+  const resetAdjustForm = () => setAdjustForm({ product_id: '', new_quantity: '', reason: '' });
 
   const openReceive = (product) => {
     setSelectedProduct(product);
-    setReceiveForm({ productId: product?.id || product?._id || '', quantity: '', reason: '', employee: '' });
+    setReceiveForm({ product_id: product?.id || '', quantity: '', reason: '', employee: '' });
     setShowReceiveModal(true);
   };
 
   const openRemove = (product) => {
     setSelectedProduct(product);
-    setRemoveForm({ productId: product?.id || product?._id || '', quantity: '', reason: '', employee: '' });
+    setRemoveForm({ product_id: product?.id || '', quantity: '', reason: '', employee: '' });
     setShowRemoveModal(true);
   };
 
   const openAdjust = (product) => {
     setSelectedProduct(product);
-    setAdjustForm({ productId: product?.id || product?._id || '', newQuantity: String(product.stock), reason: '' });
+    setAdjustForm({ product_id: product?.id || '', new_quantity: String(product.stock), reason: '' });
     setShowAdjustModal(true);
   };
 
   const openHistory = (product) => {
-    const pid = product?.id || product?._id;
-    setHistoryProductId(pid);
+    setHistoryProductId(product?.id);
     setSelectedProduct(product);
     setShowHistoryPanel(true);
   };
@@ -141,8 +147,8 @@ export default function Inventory() {
     e.preventDefault();
     if (!receiveForm.quantity || !receiveForm.reason) return toast.error('Please fill all required fields');
     try {
-      await stockIn({
-        productId: receiveForm.productId,
+      await stockInMutation.mutateAsync({
+        product_id: receiveForm.product_id,
         quantity: Number(receiveForm.quantity),
         reason: receiveForm.reason,
         employee: receiveForm.employee,
@@ -150,7 +156,7 @@ export default function Inventory() {
       toast.success('Stock received successfully');
       setShowReceiveModal(false);
       resetReceiveForm();
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
     } catch (err) {
       toast.error(err?.response?.data?.message || err?.message || 'Failed to receive stock');
     }
@@ -160,8 +166,8 @@ export default function Inventory() {
     e.preventDefault();
     if (!removeForm.quantity || !removeForm.reason) return toast.error('Please fill all required fields');
     try {
-      await stockOut({
-        productId: removeForm.productId,
+      await stockOutMutation.mutateAsync({
+        product_id: removeForm.product_id,
         quantity: Number(removeForm.quantity),
         reason: removeForm.reason,
         employee: removeForm.employee,
@@ -169,7 +175,7 @@ export default function Inventory() {
       toast.success('Stock removed successfully');
       setShowRemoveModal(false);
       resetRemoveForm();
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
     } catch (err) {
       toast.error(err?.response?.data?.message || err?.message || 'Failed to remove stock');
     }
@@ -177,17 +183,17 @@ export default function Inventory() {
 
   const handleAdjust = async (e) => {
     e.preventDefault();
-    if (adjustForm.newQuantity === '' || !adjustForm.reason) return toast.error('Please fill all required fields');
+    if (adjustForm.new_quantity === '' || !adjustForm.reason) return toast.error('Please fill all required fields');
     try {
-      await adjustStock({
-        productId: adjustForm.productId,
-        newQuantity: Number(adjustForm.newQuantity),
+      await adjustMutation.mutateAsync({
+        product_id: adjustForm.product_id,
+        new_quantity: Number(adjustForm.new_quantity),
         reason: adjustForm.reason,
       });
       toast.success('Stock adjusted successfully');
       setShowAdjustModal(false);
       resetAdjustForm();
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
     } catch (err) {
       toast.error(err?.response?.data?.message || err?.message || 'Failed to adjust stock');
     }
@@ -195,7 +201,7 @@ export default function Inventory() {
 
   const getRowClass = (item) => {
     if (item.stock <= 0) return 'bg-red-50';
-    if (item.stock <= item.minStock) return 'bg-yellow-50';
+    if (item.stock <= item.minimum_stock) return 'bg-yellow-50';
     return '';
   };
 
@@ -217,7 +223,7 @@ export default function Inventory() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Low Stock Items</p>
-              <p className="text-2xl font-bold text-yellow-600">{lowStockCount ?? 0}</p>
+              <p className="text-2xl font-bold text-yellow-600">{lowStockCount}</p>
             </div>
           </div>
         </div>
@@ -231,7 +237,7 @@ export default function Inventory() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Out of Stock</p>
-              <p className="text-2xl font-bold text-red-600">{outOfStockCount ?? 0}</p>
+              <p className="text-2xl font-bold text-red-600">{outOfStockCount}</p>
             </div>
           </div>
         </div>
@@ -290,17 +296,17 @@ export default function Inventory() {
                 </thead>
                 <tbody>
                   {filteredItems.map((item) => (
-                    <tr key={item.id || item._id} className={`border-b hover:bg-gray-50 transition ${getRowClass(item)}`}>
-                      <td className="p-3 font-medium text-gray-900">{item.name}</td>
+                    <tr key={item.id} className={`border-b hover:bg-gray-50 transition ${getRowClass(item)}`}>
+                      <td className="p-3 font-medium text-gray-900">{item.product_name}</td>
                       <td className="p-3 text-sm text-gray-500 font-mono">{item.sku}</td>
                       <td className="p-3 text-sm text-gray-600">{item.category}</td>
                       <td className="p-3 text-center font-semibold text-gray-900">{item.stock}</td>
-                      <td className="p-3 text-center text-sm text-gray-500">{item.minStock}</td>
+                      <td className="p-3 text-center text-sm text-gray-500">{item.minimum_stock}</td>
                       <td className="p-3 text-center">
-                        <StatusBadge stock={item.stock} min={item.minStock} />
+                        <StatusBadge stock={item.stock} min={item.minimum_stock} />
                       </td>
                       <td className="p-3 text-center text-sm text-gray-500">
-                        {item.lastMovement ? new Date(item.lastMovement).toLocaleDateString() : '--'}
+                        {item.last_movement ? new Date(item.last_movement).toLocaleDateString() : '--'}
                       </td>
                       <td className="p-3 text-right">
                         <div className="flex items-center justify-end gap-1">
@@ -359,14 +365,14 @@ export default function Inventory() {
                 <label className="label">Product</label>
                 <select
                   className="input w-full"
-                  value={receiveForm.productId}
-                  onChange={(e) => setReceiveForm((f) => ({ ...f, productId: e.target.value }))}
+                  value={receiveForm.product_id}
+                  onChange={(e) => setReceiveForm((f) => ({ ...f, product_id: e.target.value }))}
                   required
                 >
                   <option value="">Select product</option>
-                  {(items || []).map((p) => (
-                    <option key={p.id || p._id} value={p.id || p._id}>
-                      {p.name} ({p.sku})
+                  {productList.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.product_name} ({p.sku})
                     </option>
                   ))}
                 </select>
@@ -406,9 +412,9 @@ export default function Inventory() {
                 <button type="button" className="btn-secondary" onClick={() => { setShowReceiveModal(false); resetReceiveForm(); }}>
                   Cancel
                 </button>
-                <button type="submit" className="btn-success flex items-center gap-2" disabled={stockInLoading}>
+                <button type="submit" className="btn-success flex items-center gap-2" disabled={stockInMutation.isPending}>
                   <ArrowDown className="w-4 h-4" />
-                  {stockInLoading ? 'Processing...' : 'Receive Stock'}
+                  {stockInMutation.isPending ? 'Processing...' : 'Receive Stock'}
                 </button>
               </div>
             </form>
@@ -432,14 +438,14 @@ export default function Inventory() {
                 <label className="label">Product</label>
                 <select
                   className="input w-full"
-                  value={removeForm.productId}
-                  onChange={(e) => setRemoveForm((f) => ({ ...f, productId: e.target.value }))}
+                  value={removeForm.product_id}
+                  onChange={(e) => setRemoveForm((f) => ({ ...f, product_id: e.target.value }))}
                   required
                 >
                   <option value="">Select product</option>
-                  {(items || []).map((p) => (
-                    <option key={p.id || p._id} value={p.id || p._id}>
-                      {p.name} ({p.sku})
+                  {productList.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.product_name} ({p.sku})
                     </option>
                   ))}
                 </select>
@@ -479,9 +485,9 @@ export default function Inventory() {
                 <button type="button" className="btn-secondary" onClick={() => { setShowRemoveModal(false); resetRemoveForm(); }}>
                   Cancel
                 </button>
-                <button type="submit" className="btn-danger flex items-center gap-2" disabled={stockOutLoading}>
+                <button type="submit" className="btn-danger flex items-center gap-2" disabled={stockOutMutation.isPending}>
                   <ArrowUp className="w-4 h-4" />
-                  {stockOutLoading ? 'Processing...' : 'Remove Stock'}
+                  {stockOutMutation.isPending ? 'Processing...' : 'Remove Stock'}
                 </button>
               </div>
             </form>
@@ -505,14 +511,14 @@ export default function Inventory() {
                 <label className="label">Product</label>
                 <select
                   className="input w-full"
-                  value={adjustForm.productId}
-                  onChange={(e) => setAdjustForm((f) => ({ ...f, productId: e.target.value }))}
+                  value={adjustForm.product_id}
+                  onChange={(e) => setAdjustForm((f) => ({ ...f, product_id: e.target.value }))}
                   required
                 >
                   <option value="">Select product</option>
-                  {(items || []).map((p) => (
-                    <option key={p.id || p._id} value={p.id || p._id}>
-                      {p.name} ({p.sku})
+                  {productList.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.product_name} ({p.sku})
                     </option>
                   ))}
                 </select>
@@ -524,8 +530,8 @@ export default function Inventory() {
                   type="number"
                   min="0"
                   placeholder="Enter new quantity"
-                  value={adjustForm.newQuantity}
-                  onChange={(e) => setAdjustForm((f) => ({ ...f, newQuantity: e.target.value }))}
+                  value={adjustForm.new_quantity}
+                  onChange={(e) => setAdjustForm((f) => ({ ...f, new_quantity: e.target.value }))}
                   required
                 />
               </div>
@@ -543,9 +549,9 @@ export default function Inventory() {
                 <button type="button" className="btn-secondary" onClick={() => { setShowAdjustModal(false); resetAdjustForm(); }}>
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary flex items-center gap-2" disabled={adjustLoading}>
+                <button type="submit" className="btn-primary flex items-center gap-2" disabled={adjustMutation.isPending}>
                   <RotateCcw className="w-4 h-4" />
-                  {adjustLoading ? 'Processing...' : 'Adjust Stock'}
+                  {adjustMutation.isPending ? 'Processing...' : 'Adjust Stock'}
                 </button>
               </div>
             </form>
@@ -568,7 +574,7 @@ export default function Inventory() {
             </div>
             {selectedProduct && (
               <div className="px-4 py-3 bg-gray-50 border-b">
-                <p className="font-medium text-gray-900">{selectedProduct.name}</p>
+                <p className="font-medium text-gray-900">{selectedProduct.product_name}</p>
                 <p className="text-sm text-gray-500">{selectedProduct.sku}</p>
               </div>
             )}
@@ -579,7 +585,7 @@ export default function Inventory() {
                     <div key={i} className="h-16 bg-gray-100 animate-pulse rounded" />
                   ))}
                 </div>
-              ) : !history || history.length === 0 ? (
+              ) : !history || (Array.isArray(history) && history.length === 0) ? (
                 <div className="text-center py-10">
                   <Clock className="w-10 h-10 text-gray-300 mx-auto mb-2" />
                   <p className="text-gray-500">No movement history found.</p>
@@ -587,11 +593,11 @@ export default function Inventory() {
               ) : (
                 <div className="space-y-3">
                   {history.map((m, i) => (
-                    <div key={m.id || m._id || i} className="card p-3">
+                    <div key={m.id || i} className="card p-3">
                       <div className="flex items-center justify-between mb-2">
-                        <MovementBadge type={m.type} />
+                        <MovementBadge type={m.movement_type} />
                         <span className="text-xs text-gray-400">
-                          {m.date ? new Date(m.date).toLocaleString() : '--'}
+                          {m.created_at ? new Date(m.created_at).toLocaleString() : '--'}
                         </span>
                       </div>
                       <p className="text-sm font-medium text-gray-900">

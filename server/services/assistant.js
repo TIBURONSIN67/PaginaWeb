@@ -189,7 +189,7 @@ const TOOLS = [
   }
 ];
 
-async function executeToolCall(name, args) {
+async function executeToolCall(name, args, phone) {
   logger.toolCall(name, args);
 
   switch (name) {
@@ -419,6 +419,10 @@ async function executeToolCall(name, args) {
         ).run(item.product.id, 'SALE', -item.qty, `Order #${orderId}`);
       }
 
+      db.prepare(
+        'UPDATE customers SET total_orders = total_orders + 1, total_spent = total_spent + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+      ).run(total, customer.id);
+
       const orderNumber = `ORD-${String(orderId).padStart(6, '0')}`;
 
       logger.order(`Order #${orderId} created for customer ${customer.full_name || phone}`);
@@ -512,7 +516,7 @@ async function executeToolCall(name, args) {
 
       db.prepare(
         'INSERT INTO pending_transfers (phone_number, reason) VALUES (?, ?)'
-      ).run('unknown', args.reason);
+      ).run(phone || 'unknown', args.reason);
 
       return {
         success: true,
@@ -580,7 +584,7 @@ export async function processMessage(phone, name, message) {
       for (const toolCall of assistantMessage.tool_calls) {
         const functionName = toolCall.function.name;
         const functionArgs = JSON.parse(toolCall.function.arguments);
-        const result = await executeToolCall(functionName, functionArgs);
+        const result = await executeToolCall(functionName, functionArgs, phone);
 
         toolResults.push({
           role: 'tool',

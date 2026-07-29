@@ -93,7 +93,7 @@ function convertTypes(obj) {
   const result = {};
   for (const key of Object.keys(obj)) {
     const val = obj[key];
-    if (typeof val === 'number' && (key === 'c' || key === 'count' || key === 'total' || key.endsWith('_count') || key.endsWith('_id') || key.startsWith('total_') || key === 'stock' || key === 'minimum_stock' || key === 'quantity')) {
+    if (typeof val === 'number' && (key === 'c' || key === 'count' || key.endsWith('_count') || key.endsWith('_id') || key === 'stock' || key === 'minimum_stock' || key === 'quantity')) {
       result[key] = Math.round(val);
     } else {
       result[key] = val;

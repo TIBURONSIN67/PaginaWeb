@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { messagesApi, customersApi } from '../lib/api';
+import { messagesApi } from '../lib/api';
 import {
   useMessages,
   useConversation,
@@ -51,7 +51,7 @@ function groupByDate(messages) {
   let currentLabel = null;
   let group = [];
   messages.forEach((msg) => {
-    const label = getDateLabel(msg.createdAt || msg.timestamp);
+    const label = getDateLabel(msg.created_at || msg.timestamp);
     if (label !== currentLabel) {
       if (group.length) groups.push({ label: currentLabel, messages: group });
       currentLabel = label;
@@ -65,9 +65,9 @@ function groupByDate(messages) {
 }
 
 function getMsgType(msg) {
-  if (msg.type === 'ai' || msg.sender === 'ai' || msg.isAi || msg.from === 'ai') return 'ai';
-  if (msg.type === 'employee' || msg.sender === 'employee' || msg.isEmployee) return 'employee';
-  if (msg.fromMe || msg.isMe || msg.direction === 'outbound') return 'employee';
+  if (msg.sender === 'ai') return 'ai';
+  if (msg.sender === 'employee') return 'employee';
+  if (msg.sender === 'customer') return 'customer';
   return 'customer';
 }
 
@@ -86,7 +86,6 @@ export default function Messages() {
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [transferReason, setTransferReason] = useState('');
   const messagesEndRef = useRef(null);
-  const messagesContainerRef = useRef(null);
 
   const filterParams = activeFilter !== 'all' ? { filter: activeFilter } : undefined;
   const { data: conversationsRes, isLoading: convosLoading } = useMessages(filterParams);
@@ -100,32 +99,32 @@ export default function Messages() {
   const transfers = transfersRes?.data || transfersRes || [];
 
   const selectedConversation = Array.isArray(conversations)
-    ? conversations.find((c) => (c.phone || c.from || c.sender) === selectedPhone)
+    ? conversations.find((c) => (c.phone_number || c.from || c.sender) === selectedPhone)
     : null;
 
   const filteredConversations = Array.isArray(conversations)
     ? conversations.filter((conv) => {
         if (!searchQuery) return true;
-        const name = (conv.customer?.name || conv.customerName || conv.name || '').toLowerCase();
-        const phone = (conv.phone || conv.from || conv.sender || '').toLowerCase();
+        const name = (conv.customer_name || conv.name || '').toLowerCase();
+        const phone = (conv.phone_number || conv.from || conv.sender || '').toLowerCase();
         const q = searchQuery.toLowerCase();
         return name.includes(q) || phone.includes(q);
       })
     : [];
 
-  const convoPhone = (c) => c.phone || c.from || c.sender || '';
+  const convoPhone = (c) => c.phone_number || c.from || c.sender || '';
   const convoName = (c) =>
-    c.customer?.name || c.customerName || c.name || convoPhone(c) || 'Unknown';
+    c.customer_name || c.name || convoPhone(c) || 'Unknown';
   const convoLastMsg = (c) =>
-    c.lastMessage?.body || c.lastMessage?.text || c.lastMessage?.message || c.body || c.text || '';
+    c.last_message || c.body || c.text || '';
   const convoTime = (c) =>
-    c.lastMessage?.createdAt || c.lastMessage?.timestamp || c.createdAt || c.timestamp;
-  const convoUnread = (c) => c.unreadCount || c.unread || 0;
+    c.last_message_time || c.created_at || c.timestamp;
+  const convoUnread = (c) => c.unread_count || c.unread || 0;
   const convoStatus = (c) => c.status || 'offline';
 
-  const msgId = (m) => m._id || m.id || `${Math.random()}`;
-  const msgBody = (m) => m.body || m.text || m.message || '';
-  const msgTime = (m) => m.createdAt || m.timestamp;
+  const msgId = (m) => m.id || `${Math.random()}`;
+  const msgBody = (m) => m.message || m.body || m.text || '';
+  const msgTime = (m) => m.created_at || m.timestamp;
   const msgType = (m) => getMsgType(m);
 
   useEffect(() => {
@@ -139,7 +138,7 @@ export default function Messages() {
   const handleSend = () => {
     if (!newMessage.trim() || !selectedPhone) return;
     sendMessage.mutate(
-      { phone: selectedPhone, message: newMessage.trim() },
+      { phone_number: selectedPhone, message: newMessage.trim() },
       { onSuccess: () => setNewMessage('') }
     );
   };
@@ -154,7 +153,7 @@ export default function Messages() {
   const handleTransfer = () => {
     if (!transferReason.trim() || !selectedPhone) return;
     messagesApi
-      .send({ phone: selectedPhone, message: transferReason.trim(), type: 'transfer' })
+      .send({ phone_number: selectedPhone, message: transferReason.trim(), type: 'transfer' })
       .then(() => {
         toast.success('Transfer initiated');
         setTransferModalOpen(false);
@@ -216,33 +215,33 @@ export default function Messages() {
           ) : (
             Array.isArray(transfers) && transfers.map((transfer) => (
               <div
-                key={transfer._id || transfer.id}
+                key={transfer.id}
                 className="p-3 border-b border-gray-50"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-white text-sm font-semibold ${getAvatarColor(transfer.customer?.name || transfer.customerName || transfer.phone || '')}`}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-white text-sm font-semibold ${getAvatarColor(transfer.customer_name || transfer.phone_number || '')}`}
                     >
-                      {getInitials(transfer.customer?.name || transfer.customerName || transfer.phone || '')}
+                      {getInitials(transfer.customer_name || transfer.phone_number || '')}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-gray-900 truncate">
-                        {transfer.customer?.name || transfer.customerName || transfer.phone || 'Unknown'}
+                        {transfer.customer_name || transfer.phone_number || 'Unknown'}
                       </p>
                       <p className="text-xs text-gray-500 truncate">
-                        {transfer.reason || transfer.message || 'Transfer requested'}
+                        {transfer.reason || 'Transfer requested'}
                       </p>
                       <div className="flex items-center gap-1 mt-1">
                         <Clock className="w-3 h-3 text-gray-400" />
                         <span className="text-xs text-gray-400">
-                          {formatTime(transfer.createdAt || transfer.timestamp)}
+                          {formatTime(transfer.created_at)}
                         </span>
                       </div>
                     </div>
                   </div>
                   <button
-                    onClick={() => handleResolveTransfer(transfer._id || transfer.id)}
+                    onClick={() => handleResolveTransfer(transfer.id)}
                     disabled={resolveTransfer.isPending}
                     className="btn-ghost p-1.5 flex-shrink-0"
                     title="Resolve"
@@ -252,7 +251,7 @@ export default function Messages() {
                 </div>
                 <div className="mt-2">
                   <button
-                    onClick={() => handleResolveTransfer(transfer._id || transfer.id)}
+                    onClick={() => handleResolveTransfer(transfer.id)}
                     disabled={resolveTransfer.isPending}
                     className="btn-primary text-xs w-full"
                   >
@@ -438,7 +437,6 @@ export default function Messages() {
             {renderChatHeader()}
 
             <div
-              ref={messagesContainerRef}
               className="flex-1 overflow-y-auto p-4"
             >
               {chatLoading ? (

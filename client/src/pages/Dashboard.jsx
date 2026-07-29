@@ -4,7 +4,7 @@ import {
   AlertTriangle, ArrowRight, Package, ShoppingCart, MessageSquare, Clock,
 } from 'lucide-react';
 import StatsCards from '../components/StatsCards';
-import api, { ordersApi, messagesApi, customersApi, productsApi, inventoryApi } from '../lib/api';
+import { ordersApi, messagesApi, customersApi, productsApi, inventoryApi } from '../lib/api';
 
 const statusBadge = {
   Pending: 'badge bg-gray-100 text-gray-700',
@@ -87,7 +87,7 @@ export default function Dashboard() {
             <Package className="w-4 h-4" />
             Products
           </Link>
-          <Link to="/orders/new" className="btn-primary text-sm">
+          <Link to="/orders" className="btn-primary text-sm">
             <ShoppingCart className="w-4 h-4" />
             New Order
           </Link>

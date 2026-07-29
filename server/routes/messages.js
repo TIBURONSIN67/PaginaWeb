@@ -106,7 +106,17 @@ router.get('/:phone', (req, res) => {
 
 router.post('/send', validate(sendMessageSchema), async (req, res) => {
   try {
-    const { phone_number, message } = req.validatedBody;
+    const { phone_number, message, type } = req.body;
+
+    if (type === 'transfer') {
+      const customer = db.prepare('SELECT * FROM customers WHERE phone_number = ?').get(phone_number);
+      db.prepare(
+        'INSERT INTO pending_transfers (phone_number, customer_name, reason) VALUES (?, ?, ?)'
+      ).run(phone_number, customer?.full_name || '', message);
+
+      logger.info(`Transfer created for ${phone_number}: ${message}`);
+      return res.json({ success: true, message: 'Transfer created' });
+    }
 
     const customer = db.prepare('SELECT * FROM customers WHERE phone_number = ?').get(phone_number);
     const name = customer?.full_name || 'Customer';

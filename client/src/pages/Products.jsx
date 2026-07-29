@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { productsApi } from '../lib/api';
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from '../hooks/useProducts';
 import toast from 'react-hot-toast';
@@ -14,18 +14,18 @@ const ITEMS_PER_PAGE = 10;
 
 const INITIAL_FORM = {
   sku: '',
-  name: '',
+  product_name: '',
   brand: '',
   model: '',
   category: '',
   description: '',
-  purchasePrice: '',
-  salePrice: '',
+  purchase_price: '',
+  sale_price: '',
   stock: '',
-  minStock: '',
+  minimum_stock: '',
   barcode: '',
   supplier: '',
-  compatibleModels: '',
+  compatible_models: '',
 };
 
 export default function Products() {
@@ -51,9 +51,10 @@ export default function Products() {
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
 
-  const products = productsRes?.data || (Array.isArray(productsRes) ? productsRes : []);
-  const totalPages = productsRes?.totalPages || productsRes?.pages || 1;
-  const total = productsRes?.total || products.length;
+  const pagination = productsRes?.data?.pagination || productsRes?.pagination || {};
+  const products = productsRes?.data?.items || (Array.isArray(productsRes?.data) ? productsRes.data : (Array.isArray(productsRes) ? productsRes : []));
+  const totalPages = pagination.pages || 1;
+  const total = pagination.total || products.length;
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
@@ -70,18 +71,18 @@ export default function Products() {
     setEditingProduct(product);
     setForm({
       sku: product.sku || '',
-      name: product.name || '',
+      product_name: product.product_name || '',
       brand: product.brand || '',
       model: product.model || '',
       category: product.category || '',
       description: product.description || '',
-      purchasePrice: product.purchasePrice ?? '',
-      salePrice: product.salePrice ?? '',
+      purchase_price: product.purchase_price ?? '',
+      sale_price: product.sale_price ?? '',
       stock: product.stock ?? '',
-      minStock: product.minStock ?? '',
+      minimum_stock: product.minimum_stock ?? '',
       barcode: product.barcode || '',
       supplier: product.supplier || '',
-      compatibleModels: (product.compatibleModels || []).join(', '),
+      compatible_models: product.compatible_models || '',
     });
     setModalOpen(true);
   };
@@ -92,18 +93,22 @@ export default function Products() {
 
   const handleSave = () => {
     const payload = {
-      ...form,
-      purchasePrice: Number(form.purchasePrice) || 0,
-      salePrice: Number(form.salePrice) || 0,
+      sku: form.sku,
+      product_name: form.product_name,
+      brand: form.brand,
+      model: form.model,
+      category: form.category,
+      description: form.description,
+      purchase_price: Number(form.purchase_price) || 0,
+      sale_price: Number(form.sale_price) || 0,
       stock: Number(form.stock) || 0,
-      minStock: Number(form.minStock) || 0,
-      compatibleModels: form.compatibleModels
-        ? form.compatibleModels.split(',').map((s) => s.trim()).filter(Boolean)
-        : [],
+      minimum_stock: Number(form.minimum_stock) || 0,
+      barcode: form.barcode,
+      supplier: form.supplier,
     };
 
     if (editingProduct) {
-      const id = editingProduct._id || editingProduct.id;
+      const id = editingProduct.id;
       updateProduct.mutate({ id, data: payload }, {
         onSuccess: () => setModalOpen(false),
       });
@@ -116,7 +121,7 @@ export default function Products() {
 
   const handleDelete = () => {
     if (!deleteConfirm) return;
-    const id = deleteConfirm._id || deleteConfirm.id;
+    const id = deleteConfirm.id;
     deleteProduct.mutate(id, {
       onSuccess: () => setDeleteConfirm(null),
     });
@@ -125,18 +130,17 @@ export default function Products() {
   const handleDuplicate = (product) => {
     const payload = {
       sku: (product.sku || '') + '-COPY',
-      name: (product.name || '') + ' (Copy)',
+      product_name: (product.product_name || '') + ' (Copy)',
       brand: product.brand || '',
       model: product.model || '',
       category: product.category || '',
       description: product.description || '',
-      purchasePrice: product.purchasePrice || 0,
-      salePrice: product.salePrice || 0,
+      purchase_price: product.purchase_price || 0,
+      sale_price: product.sale_price || 0,
       stock: product.stock || 0,
-      minStock: product.minStock || 0,
+      minimum_stock: product.minimum_stock || 0,
       barcode: product.barcode || '',
       supplier: product.supplier || '',
-      compatibleModels: product.compatibleModels || [],
     };
     createProduct.mutate(payload);
   };
@@ -269,13 +273,13 @@ export default function Products() {
                 </tr>
               ) : (
                 products.map((product) => {
-                  const id = product._id || product.id;
+                  const id = product.id;
                   return (
                     <tr key={id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                       <td className="px-5 py-3">
                         <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
-                          {product.image ? (
-                            <img src={product.image} alt="" className="w-10 h-10 object-cover" />
+                          {product.image_url ? (
+                            <img src={product.image_url} alt="" className="w-10 h-10 object-cover" />
                           ) : (
                             <Package className="w-5 h-5 text-gray-400" />
                           )}
@@ -285,7 +289,7 @@ export default function Products() {
                         {product.sku}
                       </td>
                       <td className="px-5 py-3 text-sm text-gray-700">
-                        {product.name}
+                        {product.product_name}
                       </td>
                       <td className="px-5 py-3 text-sm text-gray-600 whitespace-nowrap">
                         {product.brand || '\u2014'}
@@ -297,12 +301,12 @@ export default function Products() {
                         <span className="badge-gray">{product.category || '\u2014'}</span>
                       </td>
                       <td className="px-5 py-3 text-sm font-medium text-gray-900 text-right whitespace-nowrap">
-                        ${(product.salePrice || 0).toFixed(2)}
+                        ${(product.sale_price || 0).toFixed(2)}
                       </td>
                       <td className="px-5 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-gray-900">{product.stock ?? 0}</span>
-                          {getStockBadge(product.stock || 0, product.minStock || 0)}
+                          {getStockBadge(product.stock || 0, product.minimum_stock || 0)}
                         </div>
                       </td>
                       <td className="px-5 py-3 text-sm text-gray-600 whitespace-nowrap">
@@ -404,7 +408,7 @@ export default function Products() {
               </div>
               <div>
                 <label className="label">Product Name</label>
-                <input name="name" value={form.name} onChange={handleFormChange} className="input" />
+                <input name="product_name" value={form.product_name} onChange={handleFormChange} className="input" />
               </div>
               <div>
                 <label className="label">Brand</label>
@@ -429,11 +433,11 @@ export default function Products() {
               </div>
               <div>
                 <label className="label">Purchase Price</label>
-                <input name="purchasePrice" type="number" step="0.01" value={form.purchasePrice} onChange={handleFormChange} className="input" />
+                <input name="purchase_price" type="number" step="0.01" value={form.purchase_price} onChange={handleFormChange} className="input" />
               </div>
               <div>
                 <label className="label">Sale Price</label>
-                <input name="salePrice" type="number" step="0.01" value={form.salePrice} onChange={handleFormChange} className="input" />
+                <input name="sale_price" type="number" step="0.01" value={form.sale_price} onChange={handleFormChange} className="input" />
               </div>
               <div>
                 <label className="label">Stock</label>
@@ -441,7 +445,7 @@ export default function Products() {
               </div>
               <div>
                 <label className="label">Minimum Stock</label>
-                <input name="minStock" type="number" value={form.minStock} onChange={handleFormChange} className="input" />
+                <input name="minimum_stock" type="number" value={form.minimum_stock} onChange={handleFormChange} className="input" />
               </div>
               <div>
                 <label className="label">Barcode</label>
@@ -454,8 +458,8 @@ export default function Products() {
               <div className="sm:col-span-2">
                 <label className="label">Compatible Models <span className="text-gray-400 font-normal">(comma separated)</span></label>
                 <input
-                  name="compatibleModels"
-                  value={form.compatibleModels}
+                  name="compatible_models"
+                  value={form.compatible_models}
                   onChange={handleFormChange}
                   placeholder="iPhone 12, Galaxy S21, Pixel 6"
                   className="input"
@@ -484,7 +488,7 @@ export default function Products() {
           <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Delete Product</h2>
             <p className="text-sm text-gray-500 mb-6">
-              Are you sure you want to delete <strong>{deleteConfirm.name}</strong>? This action cannot be undone.
+              Are you sure you want to delete <strong>{deleteConfirm.product_name}</strong>? This action cannot be undone.
             </p>
             <div className="flex items-center justify-end gap-3">
               <button onClick={() => setDeleteConfirm(null)} className="btn-secondary">

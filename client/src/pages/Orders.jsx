@@ -45,11 +45,11 @@ const PAYMENT_METHODS = ['Cash', 'Transfer', 'Card'];
 const ITEMS_PER_PAGE = 10;
 
 const INITIAL_CREATE_FORM = {
-  customerPhone: '',
-  customerName: '',
-  items: [{ productId: '', quantity: '1' }],
-  paymentMethod: 'Cash',
-  shippingAddress: '',
+  phone_number: '',
+  customer_name: '',
+  items: [{ product_id: '', quantity: '1' }],
+  payment_method: 'Cash',
+  shipping_address: '',
   notes: '',
   discount: '0',
 };
@@ -82,9 +82,10 @@ export default function Orders() {
   const updateOrderStatus = useUpdateOrderStatus();
   const { data: orderDetailRes, isLoading: detailLoading } = useOrder(detailOrderId);
 
-  const orders = ordersRes?.data || (Array.isArray(ordersRes) ? ordersRes : []);
-  const totalPages = ordersRes?.totalPages || ordersRes?.pages || 1;
-  const total = ordersRes?.total || orders.length;
+  const pagination = ordersRes?.data?.pagination || ordersRes?.pagination || {};
+  const orders = ordersRes?.data?.items || (Array.isArray(ordersRes?.data) ? ordersRes.data : (Array.isArray(ordersRes) ? ordersRes : []));
+  const totalPages = pagination.pages || 1;
+  const total = pagination.total || orders.length;
   const orderDetail = orderDetailRes?.data || orderDetailRes;
 
   const handleSearchChange = (e) => {
@@ -110,7 +111,7 @@ export default function Orders() {
   const addItem = () => {
     setCreateForm({
       ...createForm,
-      items: [...createForm.items, { productId: '', quantity: '1' }],
+      items: [...createForm.items, { product_id: '', quantity: '1' }],
     });
   };
 
@@ -122,16 +123,16 @@ export default function Orders() {
 
   const handleCreateOrder = () => {
     const payload = {
-      customerPhone: createForm.customerPhone,
-      customerName: createForm.customerName,
+      phone_number: createForm.phone_number,
+      customer_name: createForm.customer_name,
       items: createForm.items
-        .filter((item) => item.productId)
+        .filter((item) => item.product_id)
         .map((item) => ({
-          productId: item.productId,
+          product_id: item.product_id,
           quantity: Number(item.quantity) || 1,
         })),
-      paymentMethod: createForm.paymentMethod,
-      shippingAddress: createForm.shippingAddress,
+      payment_method: createForm.payment_method,
+      shipping_address: createForm.shipping_address,
       notes: createForm.notes,
       discount: Number(createForm.discount) || 0,
     };
@@ -147,8 +148,7 @@ export default function Orders() {
   };
 
   const openDetail = (id) => {
-    const orderId = id || '';
-    setDetailOrderId(orderId);
+    setDetailOrderId(id || '');
   };
 
   const handleStatusUpdate = (status) => {
@@ -157,7 +157,7 @@ export default function Orders() {
 
   const handleCancelOrder = () => {
     if (!cancelConfirm) return;
-    const id = cancelConfirm._id || cancelConfirm.id;
+    const id = cancelConfirm.id;
     updateOrderStatus.mutate({ id, status: 'Cancelled' }, {
       onSuccess: () => setCancelConfirm(null),
     });
@@ -167,14 +167,14 @@ export default function Orders() {
     toast('Print feature coming soon', { icon: '\uD83D\uDDA8\uFE0F' });
   };
 
-  const orderId = (order) => order._id || order.id || '';
-  const orderNumber = (order) => order.orderNumber || orderId(order).toString().slice(-6).toUpperCase();
-  const orderDate = (order) => new Date(order.createdAt || order.date).toLocaleDateString();
-  const orderCustomerName = (order) => order.customer?.name || order.customerName || 'Walk-in';
-  const orderCustomerPhone = (order) => order.customer?.phone || order.customerPhone || '\u2014';
-  const orderItemCount = (order) => order.items?.length || order.itemCount || 0;
+  const orderId = (order) => order.id || '';
+  const orderNumber = (order) => `ORD-${String(order.id || 0).padStart(6, '0')}`;
+  const orderDate = (order) => order.created_at ? new Date(order.created_at).toLocaleDateString() : '';
+  const orderCustomerName = (order) => order.customer_name || 'Walk-in';
+  const orderCustomerPhone = (order) => order.phone_number || '\u2014';
+  const orderItemCount = (order) => order.item_count || order.items?.length || 0;
   const orderTotal = (order) => (order.total || 0).toFixed(2);
-  const orderPaymentStatus = (order) => order.paymentStatus || 'Pending';
+  const orderPaymentStatus = (order) => order.payment_status || 'Pending';
   const orderStatus = (order) => order.status || 'Pending';
 
   const nextStatuses = (current) => {
@@ -190,7 +190,7 @@ export default function Orders() {
     return flow[current] || [];
   };
 
-  const detail = orderDetail && (orderDetail._id || orderDetail.id) ? orderDetail : null;
+  const detail = orderDetail && orderDetail.id ? orderDetail : null;
 
   const visibleStatuses = STATUSES.filter(
     (s) => !['Cancelled'].includes(s) || (detail && detail.status === 'Cancelled')
@@ -433,8 +433,8 @@ export default function Orders() {
                 <div>
                   <label className="label">Customer Phone</label>
                   <input
-                    name="customerPhone"
-                    value={createForm.customerPhone}
+                    name="phone_number"
+                    value={createForm.phone_number}
                     onChange={handleCreateFormChange}
                     placeholder="Phone number"
                     className="input"
@@ -443,8 +443,8 @@ export default function Orders() {
                 <div>
                   <label className="label">Customer Name</label>
                   <input
-                    name="customerName"
-                    value={createForm.customerName}
+                    name="customer_name"
+                    value={createForm.customer_name}
                     onChange={handleCreateFormChange}
                     placeholder="Customer name"
                     className="input"
@@ -469,8 +469,8 @@ export default function Orders() {
                     <div key={index} className="flex items-center gap-2">
                       <input
                         placeholder="Product ID"
-                        value={item.productId}
-                        onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
+                        value={item.product_id}
+                        onChange={(e) => handleItemChange(index, 'product_id', e.target.value)}
                         className="input flex-1"
                       />
                       <input
@@ -499,8 +499,8 @@ export default function Orders() {
                 <div>
                   <label className="label">Payment Method</label>
                   <select
-                    name="paymentMethod"
-                    value={createForm.paymentMethod}
+                    name="payment_method"
+                    value={createForm.payment_method}
                     onChange={handleCreateFormChange}
                     className="input"
                   >
@@ -526,8 +526,8 @@ export default function Orders() {
               <div>
                 <label className="label">Shipping Address</label>
                 <input
-                  name="shippingAddress"
-                  value={createForm.shippingAddress}
+                  name="shipping_address"
+                  value={createForm.shipping_address}
                   onChange={handleCreateFormChange}
                   placeholder="Shipping address"
                   className="input"
@@ -578,7 +578,7 @@ export default function Orders() {
                   <div className="flex items-center gap-2">
                     <ClipboardList className="w-5 h-5 text-primary-600" />
                     <h2 className="text-lg font-semibold text-gray-900">
-                      Order #{detail.orderNumber || (detail._id || detail.id || '').toString().slice(-6).toUpperCase()}
+                      Order #{`ORD-${String(detail.id || '').padStart(6, '0')}`}
                     </h2>
                   </div>
                   <div className="flex items-center gap-2">
@@ -597,7 +597,7 @@ export default function Orders() {
                       {detail.status || 'Pending'}
                     </span>
                     <span className="text-sm text-gray-500">
-                      {new Date(detail.createdAt || detail.date).toLocaleString()}
+                      {detail.created_at ? new Date(detail.created_at).toLocaleString() : ''}
                     </span>
                   </div>
 
@@ -610,29 +610,29 @@ export default function Orders() {
                       <div>
                         <p className="text-gray-400">Name</p>
                         <p className="font-medium text-gray-900">
-                          {detail.customer?.name || detail.customerName || 'Walk-in'}
+                          {detail.customer_name || 'Walk-in'}
                         </p>
                       </div>
                       <div>
                         <p className="text-gray-400">Phone</p>
                         <p className="font-medium text-gray-900">
-                          {detail.customer?.phone || detail.customerPhone || '\u2014'}
+                          {detail.phone_number || '\u2014'}
                         </p>
                       </div>
-                      {detail.shippingAddress && (
+                      {detail.shipping_address && (
                         <div className="col-span-2">
                           <p className="text-gray-400">Shipping Address</p>
-                          <p className="font-medium text-gray-900">{detail.shippingAddress}</p>
+                          <p className="font-medium text-gray-900">{detail.shipping_address}</p>
                         </div>
                       )}
                       <div>
                         <p className="text-gray-400">Payment Method</p>
-                        <p className="font-medium text-gray-900">{detail.paymentMethod || '\u2014'}</p>
+                        <p className="font-medium text-gray-900">{detail.payment_method || '\u2014'}</p>
                       </div>
                       <div>
                         <p className="text-gray-400">Payment Status</p>
-                        <span className={paymentBadge[detail.paymentStatus] || paymentBadge.Pending}>
-                          {detail.paymentStatus || 'Pending'}
+                        <span className={paymentBadge[detail.payment_status] || paymentBadge.Pending}>
+                          {detail.payment_status || 'Pending'}
                         </span>
                       </div>
                     </div>
@@ -657,14 +657,14 @@ export default function Orders() {
                           {(detail.items || []).map((item, i) => (
                             <tr key={i} className="border-b border-gray-50">
                               <td className="py-2 text-gray-700">
-                                {item.product?.name || item.productId || item.product?.sku || `Item ${i + 1}`}
+                                {item.product_name || item.product_id || `Item ${i + 1}`}
                               </td>
                               <td className="py-2 text-center text-gray-600">{item.quantity || 1}</td>
                               <td className="py-2 text-right text-gray-600">
-                                ${(item.price || item.unitPrice || 0).toFixed(2)}
+                                ${(item.unit_price || 0).toFixed(2)}
                               </td>
                               <td className="py-2 text-right font-medium text-gray-900">
-                                ${((item.price || item.unitPrice || 0) * (item.quantity || 1)).toFixed(2)}
+                                ${(item.subtotal || 0).toFixed(2)}
                               </td>
                             </tr>
                           ))}

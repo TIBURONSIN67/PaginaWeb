@@ -52,6 +52,16 @@ app.use('/api/customers', apiLimiter, customerRoutes);
 app.use('/api/messages', apiLimiter, messageRoutes);
 app.use('/api/settings', apiLimiter, settingsRoutes);
 
+if (process.env.NODE_ENV === 'production') {
+  const clientDist = path.join(__dirname, '..', 'client', 'dist');
+  app.use(express.static(clientDist));
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(clientDist, 'index.html'));
+    }
+  });
+}
+
 app.use(notFound);
 app.use(errorHandler);
 

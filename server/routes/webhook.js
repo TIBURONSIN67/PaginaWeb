@@ -57,7 +57,6 @@ router.post('/', webhookLimiter, async (req, res) => {
 
   } catch (err) {
     logger.error('Webhook processing error', err);
-    res.status(200).json({ success: true, message: 'Received but processing error' });
   }
 });
 
