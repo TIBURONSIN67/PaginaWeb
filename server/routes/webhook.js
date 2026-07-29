@@ -43,21 +43,20 @@ router.post('/', webhookLimiter, async (req, res) => {
       return res.status(200).json({ success: true });
     }
 
-    const { phone, name, message, messageType } = messageData;
+    const { phone, name, message, messageType, mediaId } = messageData;
 
     logger.incoming(phone, name, message);
 
     createCustomer(phone, name);
-    saveWhatsAppMessage(phone, name, message, 'customer', messageType);
+    saveWhatsAppMessage(phone, name, message, 'customer', messageType, mediaId || '');
 
-    res.status(200).json({ success: true, message: 'Received' });
+    res.status(200).json({ success: true, message: 'Recibido' });
 
-    const aiReply = await processMessage(phone, name, message);
-
-    saveWhatsAppMessage(phone, name, aiReply, 'ai', 'text');
-
-    if (messageData.phone) {
-      await whatsappService.sendMessage(messageData.phone, aiReply);
+    // Procesar con IA solo si es texto (ignorar imágenes, audio, etc. por ahora)
+    if (messageType === 'text') {
+      const aiReply = await processMessage(phone, name, message);
+      saveWhatsAppMessage(phone, name, aiReply, 'ai', 'text');
+      await whatsappService.sendMessage(phone, aiReply);
     }
 
   } catch (err) {

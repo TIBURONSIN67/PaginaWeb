@@ -27,10 +27,10 @@ export function getConversationHistory(phone, limit = 30) {
   ).all(phone, limit);
 }
 
-export function saveWhatsAppMessage(phone, name, message, sender, messageType = 'text') {
+export function saveWhatsAppMessage(phone, name, message, sender, messageType = 'text', mediaId = '', mediaUrl = '') {
   return db.prepare(
-    'INSERT INTO whatsapp_messages (phone_number, customer_name, message, sender, message_type, processed) VALUES (?, ?, ?, ?, ?, 0)'
-  ).run(phone, name || '', message, sender, messageType);
+    'INSERT INTO whatsapp_messages (phone_number, customer_name, message, sender, message_type, media_id, media_url, processed) VALUES (?, ?, ?, ?, ?, ?, ?, 0)'
+  ).run(phone, name || '', message, sender, messageType, mediaId || '', mediaUrl || '');
 }
 
 export function formatCurrency(amount, currency = 'USD') {

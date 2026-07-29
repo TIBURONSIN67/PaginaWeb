@@ -1,3 +1,19 @@
+/*
+Asistente de IA para ventas por WhatsApp.
+
+Responsabilidades:
+- Procesar mensajes de clientes usando DeepSeek/OpenAI.
+- Mantener historial de conversación (últimos 30 mensajes).
+- Ejecutar funciones (tools): buscar productos, verificar stock,
+  crear cotizaciones, crear pedidos, rastrear órdenes.
+- Transferir conversaciones a empleados humanos.
+
+No debe:
+- Acceder directamente a la base de datos (usa helpers).
+- Enviar mensajes (eso lo hace whatsappService).
+- Manejar el webhook (eso lo hace el controlador).
+*/
+
 import OpenAI from 'openai';
 import { AI_CONFIG } from '../config/openai.js';
 import { getStoreSettings, getCustomerByPhone, getConversationHistory } from '../utils/helpers.js';

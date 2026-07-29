@@ -128,11 +128,16 @@ async function initializeDatabase() {
       message TEXT NOT NULL,
       sender TEXT NOT NULL CHECK(sender IN ('customer', 'ai', 'employee')),
       message_type TEXT DEFAULT 'text' CHECK(message_type IN ('text', 'image', 'document', 'audio', 'video', 'location')),
+      media_url TEXT DEFAULT '',
+      media_id TEXT DEFAULT '',
       ai_response TEXT DEFAULT '',
       processed INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  try { db.exec('ALTER TABLE whatsapp_messages ADD COLUMN media_url TEXT DEFAULT \'\''); } catch (e) {}
+  try { db.exec('ALTER TABLE whatsapp_messages ADD COLUMN media_id TEXT DEFAULT \'\''); } catch (e) {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS customers (
@@ -270,12 +275,107 @@ async function initializeDatabase() {
 
   createIndexes(db);
   insertDefaultSettings(db);
+  insertSeedData(db);
 
   saveInterval = setInterval(() => {
     db.save();
   }, 30000);
 
   return db;
+}
+
+/*
+Carga datos de demostración: productos, clientes y compatibilidades.
+Solo inserta si las tablas están vacías para no duplicar.
+*/
+function insertSeedData(db) {
+  const productCount = db.prepare('SELECT COUNT(*) as c FROM products').get();
+  if (productCount.c > 0) return;
+
+  const insertProduct = db.prepare(`
+    INSERT INTO products (sku, brand, model, category, product_name, description, purchase_price, sale_price, stock, minimum_stock, supplier)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const products = [
+    { sku: 'SAM-A54-DISP', brand: 'Samsung', model: 'Galaxy A54', category: 'Display', name: 'Pantalla Samsung Galaxy A54 OLED', desc: 'Pantalla OLED original 6.4" FHD+. Incluye marco y digitalizador.', cost: 280, price: 450, stock: 15, min: 3 },
+    { sku: 'SAM-A54-BAT', brand: 'Samsung', model: 'Galaxy A54', category: 'Battery', name: 'Batería Samsung Galaxy A54 5000mAh', desc: 'Batería original 5000mAh. Compatible con carga rápida 25W.', cost: 80, price: 150, stock: 25, min: 5 },
+    { sku: 'SAM-A54-PORT', brand: 'Samsung', model: 'Galaxy A54', category: 'Charging Port', name: 'Puerto de Carga Samsung Galaxy A54 USB-C', desc: 'Módulo de carga USB-C con flex. Incluye micrófono.', cost: 35, price: 70, stock: 40, min: 5 },
+    { sku: 'SAM-A54-FLEX', brand: 'Samsung', model: 'Galaxy A54', category: 'Flex Cable', name: 'Flex de Carga Samsung Galaxy A54', desc: 'Flex de conexión del puerto de carga a placa base.', cost: 25, price: 55, stock: 30, min: 5 },
+    { sku: 'SAM-A54-CAM', brand: 'Samsung', model: 'Galaxy A54', category: 'Camera', name: 'Cámara Trasera Samsung Galaxy A54 50MP', desc: 'Módulo de cámara principal 50MP OIS. Original.', cost: 200, price: 380, stock: 8, min: 2 },
+    { sku: 'SAM-A54-CAMF', brand: 'Samsung', model: 'Galaxy A54', category: 'Camera', name: 'Cámara Frontal Samsung Galaxy A54 32MP', desc: 'Módulo de cámara selfie 32MP. Original.', cost: 90, price: 180, stock: 10, min: 2 },
+    { sku: 'SAM-A54-SPK', brand: 'Samsung', model: 'Galaxy A54', category: 'Speaker', name: 'Parlante Samsung Galaxy A54', desc: 'Parlante multimedia original. Sonido estéreo.', cost: 45, price: 90, stock: 20, min: 5 },
+    { sku: 'SAM-A54-HOUS', brand: 'Samsung', model: 'Galaxy A54', category: 'Housing', name: 'Carcasa Completa Samsung Galaxy A54', desc: 'Carcasa trasera con marco. Incluye botones y bandeja SIM.', cost: 120, price: 220, stock: 5, min: 2 },
+    { sku: 'IP13-DISP', brand: 'Apple', model: 'iPhone 13', category: 'Display', name: 'Pantalla iPhone 13 OLED', desc: 'Pantalla OLED 6.1" compatible con Face ID. Calidad premium.', cost: 350, price: 580, stock: 12, min: 3 },
+    { sku: 'IP13-BAT', brand: 'Apple', model: 'iPhone 13', category: 'Battery', name: 'Batería iPhone 13 3227mAh', desc: 'Batería de alta capacidad. Compatible con carga inalámbrica MagSafe.', cost: 100, price: 190, stock: 18, min: 5 },
+    { sku: 'IP13-PORT', brand: 'Apple', model: 'iPhone 13', category: 'Charging Port', name: 'Puerto de Carga iPhone 13 Lightning', desc: 'Módulo Lightning con flex y micrófono. Original.', cost: 55, price: 110, stock: 25, min: 5 },
+    { sku: 'IP13-CAM', brand: 'Apple', model: 'iPhone 13', category: 'Camera', name: 'Cámara Trasera iPhone 13 12MP', desc: 'Módulo de cámara dual 12MP. Original con OIS.', cost: 250, price: 450, stock: 6, min: 2 },
+    { sku: 'IP13-SPK', brand: 'Apple', model: 'iPhone 13', category: 'Speaker', name: 'Parlante iPhone 13', desc: 'Parlante inferior original. Sonido claro y potente.', cost: 50, price: 95, stock: 15, min: 3 },
+    { sku: 'XM-RN12-DISP', brand: 'Xiaomi', model: 'Redmi Note 12', category: 'Display', name: 'Pantalla Xiaomi Redmi Note 12 AMOLED', desc: 'Pantalla AMOLED 6.67" 120Hz. Con digitalizador integrado.', cost: 180, price: 320, stock: 20, min: 5 },
+    { sku: 'XM-RN12-BAT', brand: 'Xiaomi', model: 'Redmi Note 12', category: 'Battery', name: 'Batería Xiaomi Redmi Note 12 5000mAh', desc: 'Batería original 5000mAh. Carga rápida 33W.', cost: 75, price: 140, stock: 30, min: 5 },
+    { sku: 'XM-RN12-PORT', brand: 'Xiaomi', model: 'Redmi Note 12', category: 'Charging Port', name: 'Puerto de Carga Redmi Note 12 USB-C', desc: 'Módulo USB-C con placa de carga. Compatible carga rápida.', cost: 30, price: 65, stock: 35, min: 5 },
+    { sku: 'HW-P60-DISP', brand: 'Huawei', model: 'P60 Pro', category: 'Display', name: 'Pantalla Huawei P60 Pro OLED', desc: 'Pantalla OLED curva 6.67". Alta resolución.', cost: 320, price: 520, stock: 7, min: 2 },
+    { sku: 'HW-P60-BAT', brand: 'Huawei', model: 'P60 Pro', category: 'Battery', name: 'Batería Huawei P60 Pro 4815mAh', desc: 'Batería original 4815mAh. Carga SuperCharge 88W.', cost: 95, price: 175, stock: 14, min: 3 },
+    { sku: 'MOT-E13-DISP', brand: 'Motorola', model: 'Edge 30', category: 'Display', name: 'Pantalla Motorola Edge 30 pOLED', desc: 'Pantalla pOLED 6.5" 144Hz. Con marco.', cost: 200, price: 350, stock: 10, min: 3 },
+    { sku: 'MOT-E13-BAT', brand: 'Motorola', model: 'Edge 30', category: 'Battery', name: 'Batería Motorola Edge 30 4020mAh', desc: 'Batería original. TurboPower 33W.', cost: 70, price: 130, stock: 18, min: 5 },
+    { sku: 'GEN-ACC-CARG33', brand: 'Genérico', model: 'Universal', category: 'Accessory', name: 'Cargador Rápido 33W USB-C', desc: 'Cargador turbo 33W compatible con Samsung, Xiaomi, Motorola. Incluye cable.', cost: 35, price: 80, stock: 50, min: 10 },
+    { sku: 'GEN-ACC-CABLE', brand: 'Genérico', model: 'Universal', category: 'Accessory', name: 'Cable USB-C 1m Trenzado', desc: 'Cable USB-C de 1 metro trenzado. Carga rápida y transferencia de datos.', cost: 10, price: 25, stock: 80, min: 15 },
+    { sku: 'GEN-ACC-VIDTEMP', brand: 'Genérico', model: 'Universal', category: 'Accessory', name: 'Vidrio Templado Universal', desc: 'Vidrio templado 9H. Compatible con múltiples modelos.', cost: 5, price: 20, stock: 100, min: 20 },
+    { sku: 'GEN-ACC-AUDIF', brand: 'Genérico', model: 'Universal', category: 'Accessory', name: 'Audífonos Bluetooth 5.3 TWS', desc: 'Audífonos inalámbricos con estuche de carga. Cancelación de ruido.', cost: 55, price: 120, stock: 25, min: 5 },
+    { sku: 'GEN-TOOL-KIT', brand: 'Genérico', model: 'Universal', category: 'Tool', name: 'Kit de Herramientas para Reparación', desc: 'Kit completo con destornilladores, pinzas, espátulas y ventosa.', cost: 40, price: 90, stock: 15, min: 3 },
+  ];
+
+  products.forEach(p => {
+    insertProduct.run(p.sku, p.brand, p.model, p.category, p.name, p.desc, p.cost, p.price, p.stock, p.min, 'Importadora J&V');
+  });
+
+  const insertCompat = db.prepare(
+    'INSERT INTO product_compatibility (product_id, compatible_brand, compatible_model) VALUES (?, ?, ?)'
+  );
+
+  const compatibilities = [
+    { product_sku: 'SAM-A54-DISP', brand: 'Samsung', model: 'Galaxy A54 5G' },
+    { product_sku: 'SAM-A54-DISP', brand: 'Samsung', model: 'Galaxy A34' },
+    { product_sku: 'SAM-A54-BAT', brand: 'Samsung', model: 'Galaxy A34' },
+    { product_sku: 'SAM-A54-BAT', brand: 'Samsung', model: 'Galaxy A53' },
+    { product_sku: 'SAM-A54-PORT', brand: 'Samsung', model: 'Galaxy A34' },
+    { product_sku: 'SAM-A54-PORT', brand: 'Samsung', model: 'Galaxy A53' },
+    { product_sku: 'SAM-A54-CAM', brand: 'Samsung', model: 'Galaxy A34' },
+    { product_sku: 'IP13-DISP', brand: 'Apple', model: 'iPhone 14' },
+    { product_sku: 'IP13-DISP', brand: 'Apple', model: 'iPhone 13 Pro' },
+    { product_sku: 'IP13-BAT', brand: 'Apple', model: 'iPhone 14' },
+    { product_sku: 'IP13-BAT', brand: 'Apple', model: 'iPhone 12' },
+    { product_sku: 'IP13-PORT', brand: 'Apple', model: 'iPhone 14' },
+    { product_sku: 'IP13-PORT', brand: 'Apple', model: 'iPhone 12' },
+    { product_sku: 'XM-RN12-DISP', brand: 'Xiaomi', model: 'Redmi Note 11' },
+    { product_sku: 'XM-RN12-DISP', brand: 'Xiaomi', model: 'Redmi Note 13' },
+    { product_sku: 'XM-RN12-BAT', brand: 'Xiaomi', model: 'Redmi Note 11' },
+    { product_sku: 'XM-RN12-BAT', brand: 'Xiaomi', model: 'Poco X5' },
+    { product_sku: 'HW-P60-DISP', brand: 'Huawei', model: 'P50 Pro' },
+    { product_sku: 'HW-P60-DISP', brand: 'Huawei', model: 'Mate 50' },
+    { product_sku: 'HW-P60-BAT', brand: 'Huawei', model: 'P50 Pro' },
+    { product_sku: 'MOT-E13-DISP', brand: 'Motorola', model: 'Edge 20' },
+    { product_sku: 'MOT-E13-DISP', brand: 'Motorola', model: 'Moto G200' },
+  ];
+
+  compatibilities.forEach(c => {
+    const prod = db.prepare('SELECT id FROM products WHERE sku = ?').get(c.product_sku);
+    if (prod) {
+      insertCompat.run(prod.id, c.compatible_brand, c.compatible_model);
+    }
+  });
+
+  const customerCount = db.prepare('SELECT COUNT(*) as c FROM customers').get();
+  if (customerCount.c === 0) {
+    const insertCustomer = db.prepare(
+      'INSERT INTO customers (phone_number, full_name, email, city, address, total_spent, total_orders) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    );
+    insertCustomer.run('59170000001', 'Carlos Gómez', 'carlos@email.com', 'Santa Cruz', 'Av. Principal #123', 1250, 3);
+    insertCustomer.run('59170000002', 'María López', 'maria@email.com', 'La Paz', 'Calle Comercio #456', 850, 2);
+    insertCustomer.run('59163971356', 'tiburnsin 67', '', '', '', 0, 0);
+  }
+
+  db.save();
 }
 
 function createIndexes(db) {
