@@ -361,7 +361,7 @@ function insertSeedData(db) {
   compatibilities.forEach(c => {
     const prod = db.prepare('SELECT id FROM products WHERE sku = ?').get(c.product_sku);
     if (prod) {
-      insertCompat.run(prod.id, c.compatible_brand, c.compatible_model);
+      insertCompat.run(prod.id, c.brand, c.model);
     }
   });
 
