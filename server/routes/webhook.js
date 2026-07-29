@@ -27,11 +27,16 @@ router.get('/', (req, res) => {
 
 router.post('/', webhookLimiter, async (req, res) => {
   try {
+    logger.info(`Webhook POST received - body keys: ${Object.keys(req.body || {}).join(', ') || 'empty'}`);
+
     const messageData = whatsappService.extractMessageData(req.body);
 
     if (!messageData) {
+      logger.info('Webhook POST: No message data extracted (non-message event or status)');
       return res.status(200).json({ success: true, message: 'Non-message event received' });
     }
+
+    logger.info(`Webhook POST: extracted type=${messageData.type || 'message'}, phone=${messageData.phone || 'N/A'}`);
 
     if (messageData.type === 'status') {
       logger.info(`Message status update: ${messageData.status} for ${messageData.messageId}`);
