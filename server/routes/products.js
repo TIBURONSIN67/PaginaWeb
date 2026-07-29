@@ -60,7 +60,7 @@ router.get('/', (req, res) => {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
     const offset = (page - 1) * limit;
 
-    const countQuery = `SELECT COUNT(DISTINCT p.id) as total FROM (${query})`;
+    const countQuery = `SELECT COUNT(*) as total FROM (${query})`;
     const total = db.prepare(countQuery).get(...params)?.total || 0;
 
     query += ' LIMIT ? OFFSET ?';
